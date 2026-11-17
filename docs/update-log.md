@@ -1,3 +1,11 @@
+## 2026-11-17 — Background classifier published with scheduler disabled
+
+Owner authorized deployment. Installed task/auth RPCs and disabled cron configuration, generated a scheduler credential only inside Vault, and deployed classification-worker v1. recognize-order remains v12. The worker now validates its scheduler credential using a service-only Vault-backed RPC because the MCP connection has no Edge secret-setting operation. No production task, AI classification or backfill was started. Existing business/manual-cache digests, 40 caches and 50-call daily cap are unchanged.
+
+## 2026-11-17 — Durable background occupation classification (not deployed)
+
+Reconciled repository classification code with inspected hosted recognize-order v12. Added private durable tasks/items, fenced claims, cache-only batch commits, bounded 8/4/2/1 recovery, explicit failed-item resume, and Shanghai-day quota waits. The browser now submits a task and does not run AI batches or profile backfill. Existing caches and manual priority remain; orders, workers, amounts, source archives and human review metadata are not rewritten. Added a scheduler-only worker and a separately reviewed disabled cron script. Synthetic PostgreSQL/worker/UI checks pass; browser smoke launch is blocked on this machine. No hosted migration, function deployment, scheduler activation or production AI/backfill was performed. See docs/classification-background-release.md.
+
 ## V2 occupation classification and repair-role matching
 
 - Replaced the eleven closed occupation codes with eighteen broad majors plus a shared, mergeable subcategory dictionary. Added repair/electrical/mechanical, equipment, food service, beauty, automotive and aviation coverage; unknowns become Manual Judgment instead of false history exclusions.

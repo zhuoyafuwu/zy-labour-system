@@ -29,6 +29,7 @@ window.ZYSupabase=class {
   if(path==='/api/logout'){await this.request('/auth/v1/logout',{method:'POST',token:await this.token()});this.save(null);return {ok:true}}
   if(path==='/api/recognition-status'||path==='/api/recognize-order')return this.request('/functions/v1/recognize-order',{method:'POST',token:await this.token(),body:path==='/api/recognition-status'?{action:'status'}:{action:'recognize',source:body.source}});
   if(path==='/api/job-taxonomy')return this.rpc('zy_job_taxonomy');
+  if(path==='/api/job-classification-task')return this.rpc('zy_classification_task_control',{p_action:body.action||'status'});
   if(path==='/api/job-profile-backfill')return this.rpc('zy_job_profiles_apply',{p_orders:body.orders,p_workers:body.workers,p_revision:body.revision});
   if(path==='/api/job-classification-batch'||path==='/api/job-classification-admin')return this.request('/functions/v1/recognize-order',{method:'POST',token:await this.token(),body:path==='/api/job-classification-batch'?{action:'classification-batch',items:body.items}:{action:'classification-manage',operation:body.operation,data:body.data}});
   if(path==='/api/match-profile')return this.request('/functions/v1/recognize-order',{method:'POST',token:await this.token(),body:{action:'match-profile',kind:body.kind,input:body.input,force:!!body.force}});

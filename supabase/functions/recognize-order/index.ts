@@ -57,7 +57,7 @@ Deno.serve(async(req:Request)=>{
   if(taxonomy){try{
    const service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'',identity=await member.json(),facts=output?.facts||[],fieldsInput={title:facts.find((f:any)=>f.field==='title')?.value||'',workContent:facts.filter((f:any)=>f.field==='workContent').map((f:any)=>f.value).join('；')},hash=await textHash('order',fieldsInput),cached=taxonomy.cache?.find((c:any)=>c.text_hash===hash);
    if(cached&&[fieldsInput.title,fieldsInput.workContent,source].some(t=>t.includes(cached.evidence)))output.matchProfile=cached;
-   else if(output?.matchProfile){
+   else if(output?.matchProfile&&output.matchProfile.major!=='other'){
     if(!service||!identity?.user?.id)throw Error();const privileged={apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'},ticket=crypto.randomUUID();
     try{
      const claimed=await fetch(base+'/rest/v1/rpc/zy_job_claim',{method:'POST',headers:privileged,body:JSON.stringify({p_actor:identity.user.id,p_hashes:[hash],p_ticket:ticket,p_force:false}),signal:AbortSignal.timeout(5000)});if(!claimed.ok)throw Error();const lease=await claimed.json();

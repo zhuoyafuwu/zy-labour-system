@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const source=readFileSync('dist/classification-admin.js','utf8'),requests=[],messages=[],button={disabled:false,isConnected:true};
+const context=vm.createContext({sessionUser:{id:'synthetic-admin'},jobTaxonomyAvailable:true,jobManagerAllowed:()=>true,$:()=>button,toast:s=>messages.push(s),api:async(path,options)=>{requests.push({path,options});return {task:{status:'queued'}}}});
+vm.runInContext(source.slice(source.indexOf('async function backfillClassifications(){'),source.indexOf('window.ZYClassAdmin=')),context);
+await vm.runInContext('backfillClassifications()',context);
+assert.deepEqual(JSON.parse(JSON.stringify(requests)),[{path:'/api/job-classification-task',options:{method:'POST',body:{action:'start'}}}]);
+assert.equal(button.disabled,false);assert(messages[0].includes('关闭网页后仍会继续'));
+assert(!source.includes("api('/api/job-classification-batch'"));assert(!source.includes("api('/api/job-profile-backfill'"));
+context.api=async()=>{throw Error('synthetic-task-error')};await vm.runInContext('backfillClassifications()',context);assert.equal(button.disabled,false);assert.equal(messages.at(-1),'synthetic-task-error');
+console.log('PASS: frontend submits one server task, no browser classification loop/profile writes, failures re-enable submission');

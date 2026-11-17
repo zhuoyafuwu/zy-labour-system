@@ -1,4 +1,5 @@
 """Real two-browser sharing test; temporary database/accounts, no public deployment."""
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -20,7 +21,7 @@ with tempfile.TemporaryDirectory() as tmp:
     threading.Thread(target=server.serve_forever,daemon=True).start()
     try:
         with sync_playwright() as p:
-            browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+            browser=p.chromium.launch(executable_path=os.environ.get('ZY_CHROMIUM_PATH','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
             contexts=[browser.new_context(viewport={'width':1440,'height':1000},color_scheme='dark') for _ in range(2)]
             admin,staff=[c.new_page() for c in contexts];errors=[]
             for page,username in [(admin,'owner'),(staff,'colleague')]:

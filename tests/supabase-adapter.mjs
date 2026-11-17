@@ -14,6 +14,7 @@ globalThis.fetch=async(url,opts)=>{const path=new URL(url).pathname,body=opts.bo
  if(path==='/auth/v1/logout')return response({});
  if(path==='/auth/v1/user')return response({id:'user-one'});
  if(path==='/rest/v1/rpc/zy_session')return member?response({user:{id:'user-one',username:'owner@example.test',role:'admin'},csrf:''}):response({message:'账号未获授权'},403);
+ if(path==='/rest/v1/rpc/zy_classification_task_control'){assert.deepEqual(body,{p_action:'start'});assert.equal(opts.headers.Authorization,'Bearer refreshed-jwt');return response({task:{status:'queued'}})}
  if(path==='/rest/v1/rpc/zy_orders_get')return response({orders:[],revision:0});
  if(path==='/rest/v1/rpc/zy_workers_get')return response({workers:[]});
  if(path==='/rest/v1/rpc/zy_orders_save'){assert.equal(body.p_revision,0);return response({revision:1})}
@@ -29,6 +30,7 @@ await assert.rejects(()=>adapter.call('/api/session'),e=>e.status===401);
 const session=await adapter.call('/api/login',{method:'POST',body:{username:'owner@example.test',password:'safe-test-password'}});assert.equal(session.user.role,'admin');
 assert.deepEqual(requests[0].body,{email:'owner@example.test',password:'safe-test-password'});
 adapter.session.expires_at=0;await Promise.all([adapter.call('/api/orders'),adapter.call('/api/workers')]);assert.equal(refreshCount,1);
+assert.equal((await adapter.call('/api/job-classification-task',{method:'POST',body:{action:'start'}})).task.status,'queued');
 assert.equal((await adapter.call('/api/recognition-status',{method:'POST'})).enabled,true);
 assert.equal((await adapter.call('/api/recognize-order',{method:'POST',body:{source:'测试原单'}})).provider,'gemini');
 await adapter.call('/api/orders',{method:'PUT',body:{orders:[],revision:0}});

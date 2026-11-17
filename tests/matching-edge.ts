@@ -10,7 +10,7 @@ globalThis.fetch=async(url:any,opts:any)=>{
  if(String(url).endsWith('zy_job_taxonomy'))return new Response(JSON.stringify({subcategories:dict,cache,remaining:quota?50:0}));
  if(String(url).endsWith('zy_job_claim'))return new Response(JSON.stringify({claimed:body.p_hashes,cached:[],busy:mode==='busy'?body.p_hashes:[]}));
  if(String(url).endsWith('zy_job_release'))return new Response('{}');
- if(String(url).endsWith('zy_job_reserve')){assert.equal(opts.headers.Authorization,'Bearer synthetic-service-only');return new Response('{}',{status:quota?200:429})}
+ if(String(url).endsWith('zy_job_reserve')){assert.equal(opts.headers.Authorization,'Bearer synthetic-service-only');return new Response(JSON.stringify(quota?{}:{code:'54000'}),{status:quota?200:429})}
  if(String(url).endsWith('zy_ai_reserve')){if(allowRecognition)return new Response('{}');throw Error('Classification must not consume recognition quota')}
  if(String(url).endsWith('zy_job_classification_commit')){assert.equal(opts.headers.apikey,'synthetic-service-only');const items=body.p_items.map((r:any)=>{let sid=r.subcategory_id;if(!sid&&r.new_name){let row=dict.find((x:any)=>x.major===r.major&&x.name===r.new_name);if(!row){row={id:'new:'+dict.length,major:r.major,name:r.new_name,aliases:[],status:'new'};dict.push(row)}sid=row.id}const saved={...r,subcategory_id:sid,by:'ai'};const prior=cache.find(c=>c.text_hash===r.text_hash);if(prior?.by==='user')return prior;cache=cache.filter(c=>c.text_hash!==r.text_hash);cache.push(saved);return saved});return new Response(JSON.stringify({items}))}
  if(String(url).includes('api.deepseek.com')||String(url).includes('googleapis.com')){

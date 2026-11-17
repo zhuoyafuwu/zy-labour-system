@@ -6,3 +6,7 @@ verify_jwt = false
 [functions.recognize-order]
 # The function validates the actual Bearer JWT through zy_session and zy_ai_reserve.
 verify_jwt = false
+
+[functions.classification-worker]
+# Dedicated scheduler secret is validated in the handler; never expose it in the browser.
+verify_jwt = false
