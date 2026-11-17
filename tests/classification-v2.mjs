@@ -31,3 +31,16 @@ console.log('PASS: repair regression, broad fallback, certificate evidence, manu
 const fallback=M.matchWorkerToOrder(worker,{title:'维修工',salary:'HKD15000'},{today});assert(!fallback.excluded&&!fallback.manual);assert.equal(fallback.level,'mid');assert.equal(fallback.score,70);
 
 assert.equal(C.classify('机械设备操作员').major,'equipment');assert.equal(C.classify('汽车美容技工').major,'vehicle_service');assert.equal(C.certificates('高空作業證')[0].major,'equipment');
+
+// Scheme A: unknown history cannot mask a known cross-major exclusion.
+const warehouse={gender:'男',age:'40',workHistory:[{position:'仓管员',period:'2020-至今'},{position:'合成罕见专岗',period:'2022-2023'}]};
+for(const title of ['仓管员','仓务员','货仓管理员（文员）','蔬菜仓务分配工']){assert.equal(C.classify(title).subcategory_id,'seed:warehouse');const result=M.matchWorkerToOrder(warehouse,{title},{today});assert(!result.manual&&!result.excluded);assert(['high','mid'].includes(result.level))}
+for(const title of ['洗头员','巴士车长'])assert(M.matchWorkerToOrder(warehouse,{title},{today}).excluded,title);
+assert(M.matchWorkerToOrder(warehouse,{title:'合成罕见专岗'},{today}).manual);
+assert(M.matchWorkerToOrder({workHistory:[{position:'合成罕见专岗'}]},{title:'仓务员'},{today}).manual);
+assert(M.matchWorkerToOrder({...warehouse,gender:'女'},{title:'仓务员',gender:'男'},{today}).excluded);
+assert(M.matchWorkerToOrder(warehouse,{title:'仓务员',age:'39岁以下'},{today}).excluded);
+assert.equal(M.matchWorkerToOrder({...warehouse,workHistory:[{position:'合成罕见专岗'}],certificates:'电工证'},{title:'电工'},{today}).E,35);
+assert(M.matchWorkerToOrder({...warehouse,workHistory:[{position:'合成罕见专岗'}],certificates:'电工证'},{title:'仓务员'},{today}).excluded);
+assert.equal(C.classify('文员（仓务辅助）').major,'office');
+for(const title of ['仓管','仓务','货仓','理货','分拣','冷仓','冻仓','倉管','倉務','貨倉','分揀','冷倉','凍倉'])assert.equal(C.classify(title).major,'logistics');

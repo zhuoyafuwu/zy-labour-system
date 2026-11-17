@@ -8,7 +8,7 @@ process.on('uncaughtException',e=>{console.error(e.message);process.exit(1)});
 const db=new PGlite();
 await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema public,auth to anon,authenticated,service_role;grant execute on function auth.uid() to anon,authenticated,service_role;`);
 await db.exec('create schema vault;create table vault.decrypted_secrets(name text,decrypted_secret text)');
-for(const file of readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')).sort())await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
+for(const file of readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')&&x<='202611170001_classification_tasks.sql').sort())await db.exec(readFileSync('supabase/migrations/'+file,'utf8'));
 const actor='10000000-0000-0000-0000-000000000001',staff='10000000-0000-0000-0000-000000000002';
 await db.exec(`insert into auth.users values('${actor}'),('${staff}');insert into zy_private.members values('${actor}','synthetic-admin','admin',true),('${staff}','synthetic-staff','staff',true);`);
 async function role(name:string,id=''){await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role '+name)}
@@ -77,15 +77,15 @@ assert.equal(modelCalls-splitCalls,11); // 8 -> 4 -> 2 -> eight singletons.
 assert((await sql('select max(attempts) as n from zy_private.classification_task_items'))[0].n<=6);
 await control('resume');mode='ok';for(let i=0;i<10;i++)await step();assert.equal((await control('status')).task.status,'completed');
 const beforeQuotaCalls=modelCalls;
-// Daily quota exhaustion waits until the next Shanghai day without burning retries.
+// Legacy-schema cap rejection is surfaced as a database error; the new-schema unlimited behavior has a separate regression.
 await sql("update zy_private.order_state set orders='[{\"id\":\"quota\",\"title\":\"合成额度岗位\"}]';update zy_private.job_classification_usage set calls=50");
 await control('start');await step();const quota=await sql('select last_code,next_run_at > now() as future from zy_private.classification_tasks order by created_at desc limit 1');
-assert.equal(quota[0].last_code,'CLASSIFICATION_QUOTA_EXHAUSTED');assert(quota[0].future);assert.equal(modelCalls,beforeQuotaCalls);
-assert.equal((await sql("select attempts from zy_private.classification_task_items where input->>'title'='合成额度岗位'"))[0].attempts,0);
+assert.equal(quota[0].last_code,'CLASSIFICATION_DATABASE_ERROR');assert(quota[0].future);assert.equal(modelCalls,beforeQuotaCalls);
+assert.equal((await sql("select attempts from zy_private.classification_task_items where input->>'title'='合成额度岗位'"))[0].attempts,1);
 await role('authenticated',actor);assert((await call('zy_ai_reserve')).ok); // Recognition counter remains independent.
 // Maintenance and disabled task owners stop work. Resuming requires an active admin.
 await sql('update zy_private.settings set read_only=true');await advance();assert.equal(await rpc('zy_classification_task_claim'),null);
 await sql('update zy_private.settings set read_only=false;update zy_private.members set active=false where role=\'admin\'');await advance();assert.equal(await rpc('zy_classification_task_claim'),null);
 await sql("update zy_private.members set active=true where role='admin'");assert.equal((await control('status')).task.status,'paused');
 await control('resume');await control('pause');await advance();assert.equal(await rpc('zy_classification_task_claim'),null);
-await db.close();console.log('PASS: durable tasks, 40 cache reuse / 3 manual protection, no business writes, crash recovery, fenced leases, retries, resume, Shanghai quota wait, authorization and maintenance');
+await db.close();console.log('PASS: durable tasks, 40 cache reuse / 3 manual protection, no business writes, crash recovery, fenced leases, retries, resume, legacy-schema failure, authorization and maintenance');

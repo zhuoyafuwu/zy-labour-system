@@ -10,3 +10,7 @@ verify_jwt = false
 [functions.classification-worker]
 # Dedicated scheduler secret is validated in the handler; never expose it in the browser.
 verify_jwt = false
+
+[functions.ai-matching]
+# Actual bearer identity and active team membership are checked by zy_session.
+verify_jwt = false

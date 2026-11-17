@@ -629,6 +629,32 @@
         "BV1086241",
         "2.18w"
       ]
+    },
+    {
+      "id": "REC-034",
+      "problem": "Pre-parsing simplification rewrote the source archive along with generated company text.",
+      "rootCause": "Single and batch entry sent converted source into the parser instead of converting only output company fields.",
+      "source": "【職位】倉務員\n【雇主】合成物流公司\n【月薪】HKD16800\n【性別】男\n【語言】粵語\n【工作時間】輪班\n【面試】視頻面試\n【工作內容】整理貨物",
+      "options": {
+        "explicitBoundary": true
+      },
+      "expected": {
+        "title": "倉務員",
+        "gender": "男",
+        "salary": "HKD16800"
+      },
+      "contains": {
+        "language": [
+          "粵語"
+        ],
+        "hours": [
+          "輪班"
+        ],
+        "interview": [
+          "視頻面試"
+        ]
+      },
+      "forbidden": []
     }
   ]
 }

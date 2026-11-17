@@ -6,7 +6,7 @@
  function configure(data={}){const next=[...V.subcategories.map(x=>({...x})),...(data.subcategories||[])].filter((x,i,a)=>a.findLastIndex(y=>y.id===x.id)===i),nextCache=Array.isArray(data.cache)?data.cache:cache;if(JSON.stringify(next)===JSON.stringify(dictionary)&&JSON.stringify(nextCache)===JSON.stringify(cache))return;dictionary=next;cache=nextCache;revision++;}
  function resolve(id){const seen=new Set();let row=dictionary.find(s=>s.id===id);while(row?.merged_into){if(seen.has(row.id))return null;seen.add(row.id);row=dictionary.find(s=>s.id===row.merged_into)}return row&&majorValid(row.major)?row:null}
  function classify(title='',duties='',employer='',kind='order'){
-  const primary=norm(title),content=norm(duties),company=norm(employer),fields=[primary,content,...(kind==='history'?[company]:[])];let major='other',evidence='';
+  const primary=norm(title),content=norm(duties),company=norm(employer),fields=[primary.replace(/（[^）]*）|\([^)]*\)/g,'').trim(),primary,content,...(kind==='history'?[company]:[])].filter(Boolean);let major='other',evidence='';
   for(const text of fields){const found=V.majors.flatMap(m=>m.keywords.filter(k=>text.includes(norm(k))).map(k=>({major:m.id,keyword:k}))).sort((a,b)=>b.keyword.length-a.keyword.length)[0];if(found){major=found.major;evidence=found.keyword;break}}
   if(major==='other'){const known=dictionary.map(s=>resolve(s.id)).filter(Boolean).flatMap(s=>[s.name,...(s.aliases||[])].map(alias=>({s,alias,at:fields.findIndex(t=>t.includes(norm(alias)))}))).filter(x=>x.at>=0).sort((a,b)=>a.at-b.at||b.alias.length-a.alias.length)[0];if(known){major=known.s.major;evidence=known.alias}}
   // Resolve industry-specific maintenance from employer context before generic "repair worker".

@@ -53,7 +53,7 @@
   const M=root.ZYMatching;if(!M)return null;if(!force&&M.profileFor(record,kind).valid)return record.matchProfile;
   if(!await available()||(await availability)?.classificationVersion!==2){if(!quiet&&typeof toast==='function')toast('AI暂不可用，使用规则归类');return null}
   let timer;try{const response=await Promise.race([api('/api/match-profile',{method:'POST',body:{kind,input:M.sourceFor(record,kind),force}}),new Promise((_,reject)=>timer=setTimeout(()=>reject(Error('timeout')),25000))]);if(response.taxonomy&&root.ZYClassification)root.ZYClassification.configure(response.taxonomy);const profile={...response.matchProfile,version:2,sourceHash:M.sourceHash(record,kind),by:response.matchProfile?.by==='user'?'user':'ai',at:new Date().toISOString()};if(!response.matchProfile||!M.profileFor({...record,matchProfile:profile},kind).valid)throw Error('Invalid profile');return profile}
-  catch{if(!matchWarningShown&&typeof toast==='function'){matchWarningShown=true;toast('AI归类未完成或额度不足，使用规则归类')}return null}finally{clearTimeout(timer)}
+  catch{if(!matchWarningShown&&typeof toast==='function'){matchWarningShown=true;toast('AI归类未完成，使用规则归类')}return null}finally{clearTimeout(timer)}
  }
  root.ZYAI={enhance,apply,reset,analyzeMatch};
 })(globalThis);

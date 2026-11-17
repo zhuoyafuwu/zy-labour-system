@@ -2,7 +2,7 @@
 
 A labour-order and worker management system rebuilt from the [original migration specification](docs/migration-spec.md). The current application supports account login, shared team records, a free Supabase cloud adapter, a Python/SQLite self-hosting fallback, and editing conflict detection. Business records are stored in the shared database; the interface uses a white background.
 
-Website: https://dongqimo.github.io/zy-labour-system/
+Website: https://zhuoyafuwu.github.io/zy-labour-system/
 
 ## Local development
 
@@ -82,6 +82,6 @@ Batch and single entry share the same two-column workspace: source review on the
 
 See the [update log](docs/update-log.md) for recent changes. The migration specification describes the historical source application; this README describes the rebuilt shared system. Automated local tests do not substitute for verifying production HTTPS, hosted Auth/Edge Functions, remote persistence, or provider recovery.
 
-## Authenticated order self-audit
+## AI matching
 
-After login, the browser performs a read-only audit of loaded shared orders. The Source Recognition Audit button refreshes the current list and compares seven required fields with source-derived proposals and their provenance. It highlights missing/uncertain facts instead of inventing them, retains manual company values until explicit review/save, and can download a private report containing original orders. The report can be supplied for manual review; the assistant has not independently accessed the live authenticated dataset.
+See [matching rules](docs/matching-rules.md) and the [coordinated release packet](docs/ai-matching-release.md) for automatic background classification, private AI worker profiles, all-ready-order matching and unlimited usage counters. The retired global source self-audit remains removed. Hosted deployment and provider performance require separate acceptance.

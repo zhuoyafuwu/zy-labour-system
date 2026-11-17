@@ -8,7 +8,7 @@
  function why(template,values={}){return {template,values,text:template.replace(/\{(\w+)\}/g,(_,key)=>String(values[key]??''))}}
  function dimension(key,label,got,max,mark,reasons,extra={}){return {key,label,got,displayGot:got===null?null:round(got),max,mark,reasons,text:reasons.map(r=>r.text).join('；'),missing:[],...extra}}
  function parseAgeRange(value){
-  const text=string(value).replace(/\s+/g,'');if(!text||/不限/.test(text))return {min:null,max:null,unlimited:true,unknown:false};let m;
+  const text=string(value).replace(/[岁歲\s]+/g,'');if(!text||/不限/.test(text))return {min:null,max:null,unlimited:true,unknown:false};let m;
   if((m=text.match(/(\d{1,3})\s*(?:-|–|—|~|～|至|到)\s*(\d{1,3})/))&&+m[1]<=+m[2])return {min:+m[1],max:+m[2],unknown:false};
   if((m=text.match(/(\d{1,3})岁?(?:以内|以下|内|以內|以內)/)))return {min:null,max:+m[1],unknown:false};
   if((m=text.match(/(\d{1,3})岁?(?:以上|起)/)))return {min:+m[1],max:null,unknown:false};
@@ -80,7 +80,7 @@
   const relatedRows=[...ranked.filter(h=>h.related>0),...certs].sort((a,b)=>b.value-a.value||Number(a.certificate)-Number(b.certificate)),used=relatedRows.slice(0,2),hkBonus=used.some(h=>!h.certificate&&h.isHongKong)?10:0,got=Math.min(100,(used[0]?.value||0)+.25*(used[1]?.value||0)+hkBonus),reasons=[];
   for(const h of used){if(h.certificate){reasons.push(why('持有{certificate}（证书佐证）',{certificate:h.evidence}));reasons.push(why('证书佐证属于{major}，最高中',{major:C.majorLabel(target.major)}));continue}const p=h.periodInfo;reasons.push(why('{employer} {position}；{duration}；{end}；相关度 {relevance}，时间系数 {recency}',{employer:h.employer||'',position:h.position||'',duration:p.unknown?'时长不明，按12个月':(p.approximate?'约':'')+Math.floor(p.months/12)+'年'+p.months%12+'个月',end:p.current?'至今':p.endYear?p.endYear+'年离职':'结束时间不明',relevance:h.related,recency:p.recency}));reasons.push(why(h.related===1?'经历「{history}」→岗位「{job}」；{major}':'经历「{history}」→岗位「{job}」；同属{major}，最高中',{history:h.classification.name||h.position||'—',job:target.name||order.title,major:C.majorLabel(target.major)}));}
   if(hkBonus)reasons.push(why('香港相关经历加10分'));
-  const same=ranked.some(h=>h.related===1),manual=target.major==='other'||!relatedRows.length&&ranked.some(h=>h.related===null),onlyCertificate=!!certs.length&&!ranked.some(h=>h.related>0);
+  const same=ranked.some(h=>h.related===1),manual=target.major==='other'||!wp.history.some(h=>h.major&&h.major!=='other')&&!wp.certificates.some(c=>c.major&&c.major!=='other'),onlyCertificate=!!certs.length&&!ranked.some(h=>h.related>0);
   return dimension('experience','工作经历',got,100,same?'ok':relatedRows.length?'partial':'unknown',reasons,{score:round(got),relevance:same?'same':onlyCertificate?'certificate':'related',historyIndexes:used.filter(h=>!h.certificate).map(h=>h.index),histories:used.filter(h=>!h.certificate),certificates:used.filter(h=>h.certificate),hasRelated:!!relatedRows.length,manual,target,workerMajors:[...new Set(wp.history.map(h=>h.major))],by:used.some(h=>h.by==='ai')||target.by==='ai'?'ai':'rules',missing:used.some(h=>h.periodInfo.unknown)?['工作经历起止时间']:[]});
  }
  function assessLanguages(worker,order){
@@ -128,6 +128,6 @@
   const fit=dimension('conditions','岗位条件',conditions.score,100,conditions.score===null?'unknown':conditions.score===100?'ok':conditions.score?'partial':'bad',conditions.items.map(c=>c.reason),{missing:conditions.missing});
   return {orderId:order.id,excluded:false,score,level,E:experience.score,F:conditions.score,experience,conditions,intent:{...intent,bonus:intent.got},dims:[experience,fit,intent],missing:conditions.missing,matchedIntentIndex:intent.matchedIntentIndex,hardChecks,sparse:false,language:conditions.language};
  }
- function matchWorker(worker,orders,options={}){const today=options.today||T.todayKey(),days=options.days||14,start=T.addDays(today,1-days);return orders.filter(o=>(!options.isReady||options.isReady(o))&&T.dateKey(o.createdAt)>=start&&T.dateKey(o.createdAt)<=today).map(o=>({...matchWorkerToOrder(worker,o,{today}),createdAt:o.createdAt})).sort((a,b)=>Number(a.excluded)-Number(b.excluded)||(b.score||0)-(a.score||0)||String(b.createdAt||'').localeCompare(String(a.createdAt||'')))}
+ function matchWorker(worker,orders,options={}){const today=options.today||T.todayKey(),days=options.days,start=days?T.addDays(today,1-days):null;return orders.filter(o=>(!options.isReady||options.isReady(o))&&(!days||T.dateKey(o.createdAt)>=start&&T.dateKey(o.createdAt)<=today)).map(o=>({...matchWorkerToOrder(worker,o,{today}),createdAt:o.createdAt})).sort((a,b)=>Number(a.excluded)-Number(b.excluded)||(b.score||0)-(a.score||0)||String(b.createdAt||'').localeCompare(String(a.createdAt||'')))}
  root.ZYMatching={parseAgeRange,workerAge,parsePeriod,parseLanguageRequirement,parseSalary,jobCategory,relevance,scoreIntent,scoreLanguage,scoreExperience,scoreSalary,scoreOther,matchWorkerToOrder,matchWorker,levelForScore,histories,marks,languageLevel,durationFactor,recencyFactor,profileFor,sourceFor,sourceHash,checkHardConditions,scoreConditions,intentBonus:scoreIntent,classifyByRules:jobCategory};if(typeof module!=='undefined'&&module.exports)module.exports=root.ZYMatching;
 })(globalThis);

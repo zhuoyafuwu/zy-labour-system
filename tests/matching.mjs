@@ -34,9 +34,11 @@ const order={title:'清洁员',workContent:'打扫'},profile={version:2,sourceHa
 assert(M.profileFor({...order,matchProfile:profile}).valid);assert(!M.profileFor({...order,matchProfile:{...profile,major:'invalid'}}).valid);assert(!M.profileFor({...order,matchProfile:{...profile,evidence:'编造'}}).valid);assert(!M.profileFor({...order,title:'厨师',matchProfile:profile}).valid);
 const aiWorker={...worker,matchProfile:{version:2,sourceHash:M.sourceHash(worker,'worker'),by:'ai',intents:[],certificates:[],history:[{index:0,major:'hotel_cleaning',subcategory_id:'seed:housekeeping',evidence:'客房清洁员'}]}};assert.equal(M.scoreExperience(aiWorker,order,today).by,'ai');assert.equal(M.profileFor({...aiWorker,matchProfile:{...aiWorker.matchProfile,history:[{index:0,major:'hotel_cleaning',subcategory_id:'seed:housekeeping',evidence:'invented'}]}},'worker').by,'rules');
 const before=JSON.stringify(worker),base=M.matchWorkerToOrder(worker,order,{today});assert.equal(M.matchWorkerToOrder({...worker,name:'other',phone:'private',permit:'否',idNumber:'private'},order,{today}).score,base.score);assert.equal(JSON.stringify(worker),before);
-const candidates=[{id:'recent',title:'清洁员',createdAt:'2026-11-09T01:00:00Z'},{id:'old',title:'清洁员',createdAt:'2026-10-26T01:00:00Z'}];assert.deepEqual(M.matchWorker(worker,candidates,{today}).map(r=>r.orderId),['recent']);assert.equal(M.matchWorker(worker,candidates,{today,days:30}).length,2);
+const candidates=[{id:'recent',title:'清洁员',createdAt:'2026-11-09T01:00:00Z'},{id:'old',title:'清洁员',createdAt:'2026-10-26T01:00:00Z'}];assert.deepEqual(M.matchWorker(worker,candidates,{today,days:14}).map(r=>r.orderId),['recent']);assert.equal(M.matchWorker(worker,candidates,{today,days:30}).length,2);
 console.log('PASS: experience-first matching, hard gates, conditions, no language cap, AI evidence/hash fallback and privacy');
 
 assert.equal(M.scoreSalary({desiredSalary:'CAD14000'},{salary:'CAD15000'}).ratio,1);
 
 assert.equal(M.scoreConditions({certificates:'护工上岗证'},{requirements:'须持护工上岗证'}).score,100);
+
+assert.deepEqual(M.matchWorker(worker,candidates,{today}).map(r=>r.orderId),['recent','old']);

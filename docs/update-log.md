@@ -1,3 +1,11 @@
+## Unlimited AI, automatic profiles and AI-first matching
+
+- Merged the durable-task main implementation with prior Scheme A, warehouse aliases and locally bundled simplified company text changes. Preserve source, pricing, manual review and scalar custom fee notes.
+- Added forward migrations for unlimited recognition/classification counting, worker-first queues, batch-size recovery, fenced item IDs and transactional save-time enqueueing. Daily caps are removed; two-second anti-click behavior, cache reuse and six-attempt limits remain.
+- Added an allowlisted, literal-evidence-checked worker profile and AI per-job grade/reason pipeline. Profile and pair metadata have separate private server caches, service-only writes and member checks. Strict demographic mismatches never reach the model. Manual categories are resolved before summaries.
+- Matching defaults to all release-ready orders, streams thirty-item parallel results, shows AI summary/reasons with rule reference and manual-disagreement flag, and falls back safely on provider failures. No business field or amount is model-controlled.
+- Prepared coordinated database/function/Pages approval packet. Synthetic checks do not establish hosted speed or deployment. Existing records are not converted or purged.
+
 ## 2026-11-17 — Background classifier published with scheduler disabled
 
 Owner authorized deployment. Installed task/auth RPCs and disabled cron configuration, generated a scheduler credential only inside Vault, and deployed classification-worker v1. recognize-order remains v12. The worker now validates its scheduler credential using a service-only Vault-backed RPC because the MCP connection has no Edge secret-setting operation. No production task, AI classification or backfill was started. Existing business/manual-cache digests, 40 caches and 50-call daily cap are unchanged.
@@ -5,6 +13,27 @@ Owner authorized deployment. Installed task/auth RPCs and disabled cron configur
 ## 2026-11-17 — Durable background occupation classification (not deployed)
 
 Reconciled repository classification code with inspected hosted recognize-order v12. Added private durable tasks/items, fenced claims, cache-only batch commits, bounded 8/4/2/1 recovery, explicit failed-item resume, and Shanghai-day quota waits. The browser now submits a task and does not run AI batches or profile backfill. Existing caches and manual priority remain; orders, workers, amounts, source archives and human review metadata are not rewritten. Added a scheduler-only worker and a separately reviewed disabled cron script. Synthetic PostgreSQL/worker/UI checks pass; browser smoke launch is blocked on this machine. No hosted migration, function deployment, scheduler activation or production AI/backfill was performed. See docs/classification-background-release.md.
+## Adaptive classification backfill
+
+- Confirmed the reported production error code is CLASSIFICATION_RESPONSE_INCOMPLETE. A 20-item response was truncated; completed caches remain reusable.
+- Backfill halves batches after explicit model truncation/timeouts (20 → 10 → 5 → 3 → 2 → 1 as needed), retaining the smaller size for subsequent work. Retries are bounded by batch size and the existing daily quota; provider throttling, permissions, network and quota errors stop without blind retries. Each uncached provider attempt consumes its normal reservation.
+- Unclassifiable items remain uncached and counted as unresolved, but no longer abort otherwise valid batches. Final messages distinguish fully classified from remaining manual work.
+- Prevent duplicate concurrent runs, retain completed/remaining progress and stop reasons in the dialog, and refresh the actual quota after failure. No business-data changes or hosted operations are included in this local fix.
+
+## Classification timeout and actionable backend errors
+
+- Raised batch-classification provider timeout from 20 to 60 seconds, below the existing 90-second hash lease. Standalone save-time classification retains 20 seconds for compatibility with its client wait budget. Cache hits remain free and no automatic provider retry is introduced.
+- Return fixed safe error codes and phases for model/database timeout, actual SQL quota exhaustion, database permissions, provider throttling/authentication, malformed or truncated output. Only SQLSTATE 54000 is treated as exhausted classification quota; other reservation failures no longer masquerade as HTTP 429.
+- Preserve original failure phase through lease release. No provider response body, SQL message, credential or business source is returned in diagnostics. Ordinary recognition behavior is unchanged.
+- Synthetic transport regressions cover timeout/lease release, provider throttling, malformed JSON and true quota exhaustion. This is a local backend fix, pending redeployment; it does not establish the cause of the observed production 503.
+
+## Classification backend rollout preparation and matching corrections
+
+- Verified existing v2 RPC/action/schema alignment and all 33 seeds. Prepared one-transaction SQL Editor rollout in scripts/deployment/classification-v2.sql, preserving private business tables, RLS and administrator cache precedence. Unknown AI results are not cached; provider failures remain rule fallbacks.
+- Scheme A scores known histories/certificates while omitting unknown histories. A known unrelated major excludes; only unknown jobs or entirely unclassified workers need Manual Judgment. Added profile-only unknown labels and removed repeated worker reanalysis actions.
+- Added warehouse synonyms and main-title precedence over parenthetical supplements. Retained scoring, age/gender gates, fee calculation and human ownership.
+- Bundled OpenCC 1.0.5 locally for generated company fields, preserving original source/evidence. Added an explicit administrator old-order preview/backup/confirm utility with revision protection; it does not run automatically.
+- Synthetic validation covers warehouse matches, partial unknown history, original text/fee/review preservation, stale conversion rejection, independent quotas and RLS. No production changes, backfill, data conversion or hosted deployment are implied by this entry.
 
 ## V2 occupation classification and repair-role matching
 

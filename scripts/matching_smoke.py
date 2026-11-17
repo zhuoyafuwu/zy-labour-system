@@ -53,6 +53,9 @@ with tempfile.TemporaryDirectory() as tmp:
                 assert page.locator('#match-worker-options button').count()==1
                 assert '13800005678' not in page.locator('#match-workspace').inner_text()
                 page.locator('#match-worker-options button').click();page.wait_for_selector('[data-match-order=match-hotel]')
+                assert page.locator('[data-match-days="0"]').get_attribute('aria-pressed')=='true'
+                assert page.locator('[data-match-order=match-old]').count()==1
+                page.locator('[data-match-days="14"]').click()
                 assert page.locator('[data-match-level] b').all_text_contents()==['4','2','1','0','1']
                 assert page.locator('.match-entry').count()==3
                 assert page.locator('.match-manual-row').count()==1
@@ -100,7 +103,7 @@ with tempfile.TemporaryDirectory() as tmp:
                 page.locator('[data-match-days="7"]').click();assert page.locator('[data-match-level] b').first.inner_text()=='4'
                 page.locator('[data-match-days="14"]').click()
                 assert page.locator('.match-row').evaluate_all('rows=>rows.every(e=>e.getBoundingClientRect().height===52)')
-                assert all(method in ['GET','HEAD'] for method,endpoint in requests[start_requests:]),requests[start_requests:]
+                assert all(method in ['GET','HEAD'] or method=='POST' and endpoint.endswith('/api/ai-matching') for method,endpoint in requests[start_requests:]),requests[start_requests:]
                 # Live backend updates preserve selected worker/open order and invalidate the cache.
                 page.locator('[data-match-order=match-hotel] .match-order-open').click();before=page.evaluate('matchState.calculations')
                 page.evaluate("async()=>{const w=workers.find(w=>w.id==='match-main');await api('/api/workers',{method:'PUT',body:{worker:{...w,name:'合成李秀兰更新'}}});await performSync()}")
