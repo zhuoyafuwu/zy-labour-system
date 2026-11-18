@@ -83,6 +83,8 @@ begin
  if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)>20 then raise exception '归类批次无效'; end if;
  for item in select value from jsonb_array_elements(p_items) loop
   if item->>'major' not in ('maintenance','vehicle_service','beauty','aviation_transport','equipment','driving','food_service','kitchen','hotel_cleaning','care','logistics','manufacturing','construction','retail','office','security_property','agriculture','other') or item->>'kind' not in ('order','history','intent','certificate') or (item->>'text_hash') !~ '^[a-f0-9]{64}$' or length(coalesce(item->>'evidence','')) not between 1 and 2000 then raise exception '归类字段无效'; end if;
+  -- Match the already-hosted v12 guard; never cache uncertain classifications.
+  if item->>'major'='other' then continue; end if;
   sid=nullif(item->>'subcategory_id','');n=btrim(coalesce(item->>'new_name',''));
   if sid is not null and not exists(select 1 from public.zy_job_subcategories where id=sid and major=item->>'major') then raise exception '细类无效'; end if;
   if sid is null and n<>'' then

@@ -1,3 +1,7 @@
+## 2026-11-17 — Coordinated release deployment verification
+
+Deployed the three forward migrations and recognize-order v13, classification-worker v2, ai-matching v1. Preserved scheduler/Vault/provider settings and verified unchanged 333 orders, 13 workers, revision 486 and 3 manual caches. Restored the existing active scheduler; no all-data reprocessing or old-order conversion. Reconciled the historical taxonomy source's `other` guard with already-hosted v12 behavior without replaying old SQL. See docs/ai-matching-release.md for exact migration IDs, evidence, browser-test and production-latency limitations.
+
 ## Unlimited AI, automatic profiles and AI-first matching
 
 - Merged the durable-task main implementation with prior Scheme A, warehouse aliases and locally bundled simplified company text changes. Preserve source, pricing, manual review and scalar custom fee notes.
