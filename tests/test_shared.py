@@ -42,6 +42,13 @@ class SharedServerTests(unittest.TestCase):
         client=self.client();code,data=self.call(client,'/api/login','POST',{'username':name,'password':password},origin=self.url)
         self.assertEqual(code,200);return client,data['csrf']
 
+    def test_00_human_save_assets(self):
+        for asset in ['human-save.js','human-order-ui.js','order-store.js']:
+            with self.client().open(self.url+'/'+asset) as response:
+                self.assertEqual(response.status,200)
+                self.assertEqual(response.headers.get_content_type(),'text/javascript')
+                self.assertEqual(response.read(),(Path(__file__).resolve().parents[1]/'dist'/asset).read_bytes())
+
     def test_01_authentication_csrf_and_access(self):
         anonymous=self.client()
         for path in ['/api/orders','/api/workers','/api/users']:

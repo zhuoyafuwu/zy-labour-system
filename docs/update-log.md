@@ -329,3 +329,5 @@ Website: https://dongqimo.github.io/zy-labour-system/
 ## Pending 2026-11-20 — human-owned company order saves
 
 Separated human saves from recognition normalization and blockers; removed login writes; added persistent errors, suggestion adoption, target-only optimistic saves and conflict choices. Added a pending, explicitly approved-only per-order history/soft-delete migration with exact-copy verification, metadata-only automation permissions, new data sources and portable history preservation. Added synthetic human-save release gates and a read-only admin audit. Preserved the unpublished 204 RPC repair; did not deploy, alter production records, or claim browser/production acceptance.
+
+Focused browser verification now succeeds through the existing in-app browser using an isolated localhost SQLite database. Fixed serving of the three human-save scripts and added real HTTP asset checks. Verified exact text after reopening and same-record two-tab conflict/Keep Mine. Standalone full smoke and production/new-table history UI acceptance remain pending.
