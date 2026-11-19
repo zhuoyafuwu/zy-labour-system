@@ -1,0 +1,49 @@
+# Human-owned orders: pending coordinated release
+
+## State and scope
+
+Based on remote `main` `156181b0f473aeaa9c1f0b6bfb553a202b51f61a`, verified using `git ls-remote`. Work is isolated on `codex/human-edits-final`; the older workspace and its unpublished changes remain intact. The RPC empty-body fix from local commit `6dea83b` is included to avoid overwriting that repair when packaging functions. The separate unpublished CPU optimization is not included. No assertion is made that either local commit is currently deployed: verify actual function sources before release.
+
+Nothing in this change has been pushed, deployed, run against production AI, or applied to the production database. The new SQL is deliberately under `supabase/pending-migrations/`, outside automatic migrations. Supabase MCP is unavailable in this session; production counts, function versions and lease state have not been independently verified. Historical counts in the request are evidence supplied by the user, not the release baseline.
+
+## Behavior
+
+`human-save.js` owns exact form reads, company-only OpenCC conversion, invisible control removal and the three business blockers. Recognition has separate preview handlers, with individual adoption buttons for an existing order. Text, punctuation and whitespace display directly from stored fields; copying does not reject recognition warnings. Existing amount confirmation, suggestion formula and two-line generated fee note remain. Expired authentication keeps the form and offers same-account reauthentication without re-entering the workspace or automatically resubmitting. Saves retain existing review metadata and never fabricate a review result.
+
+`order-store.js` uses the `rows-v1` capability in `zy_orders_get`. Before database migration, its bounded legacy bridge fetches fresh data and merges only the explicit target; unrelated revision races retry four times. This still uses the old aggregate RPC and cannot provide durable per-order audit before migration. Reads and audits do not change the editable baseline. Only explicit deletion invokes delete; missing rows in a partial list can never implicitly delete records. Batch writes commit individually; a failed batch can have already committed items, with stable IDs for safe retry. It is not an atomic batch.
+
+After migration, each save submits one record and its version. Same-record conflicts offer mine/theirs/field merge, with the user's input retained. Admin history is available from the editor and from account settings, including deleted records. Restore appends a new audited version. The read-only audit button invokes `auditHumanOrders()` and makes only GET requests; its report distinguishes forbidden rewrites from the explicitly allowed OpenCC/control transformations. A permitted transformation count is not falsely reported as forbidden rewriting.
+
+Versions use a global monotonic sequence (not consecutive per record). This makes `max(version)` a reliable synchronization revision even when an older record is edited or deleted. The archive retains its original JSON and revision. Triggers append old/current snapshots; history and archive reject update/delete. Anonymous, authenticated and service roles cannot directly write orders/history/workers/archive. AI/classification/matching RPCs continue to write their metadata tables, and old metadata backfill into business records is refused.
+
+Portable export/import uses new rows and preserves history and soft-deleted records. Import remains an explicit administrator operation into a completely empty target, in one transaction. A private full database backup is still required for disaster recovery, including metadata, functions and schedules.
+
+## Approval requested: exact database operation
+
+Review these files before any production database change:
+
+1. `supabase/pending-migrations/human-order-preflight.sql`: read-only aggregate baseline and drift checks.
+2. `supabase/pending-migrations/202611200001_human_order_versions.sql`: one transactional migration. It creates `orders`, `order_history`, version sequence, validation/history/immutable triggers and four single-order RPCs; copies existing order JSON unchanged; verifies count and per-ID JSON equality; archives `order_state`; changes get/save/import/export and classification/AI data sources; moves the enqueue-only order trigger; and revokes direct business writes. It does not run recognition, conversion or backfill. Duplicate normalized codes or source-function drift abort the entire transaction, without automatic repairs.
+
+Do not execute either copy/migration script without the user's required database confirmation. The migration requires maintenance read-only and zero live leases, and leaves maintenance enabled afterward. The one-off copy is the explicitly approved exception to the AGENTS rule prohibiting automated business writes.
+
+### Private backup and switching sequence
+
+- Reconnect the existing project `fjpvgxfkerbnqcctclqo`; verify project identity, deployed function sources and repository write access. Never treat `push:true` as proof of actual GitHub writing.
+- Read the baseline. Record actual current counts, aggregate digests, function definitions and migration versions; keep detailed material outside the public repository/chat. Inspect all functions/triggers that mention `order_state`; abort if dependencies differ from the reviewed migration.
+- Record current schedules, secrets (names only), task statuses and dispatch configuration privately. Pause dispatch entry points without deleting jobs, caches or changing model configuration. Pause classification task claiming; drain in-flight classification and AI leases. Existing task items and progress remain intact. Maintenance prevents new business writes; do not rely on it alone to stop already-leased AI calls.
+- Enable `settings.read_only`, drain leases again, then take a final private database backup. Include schema/functions/grants, `order_state` with revision, workers, metadata/cache/history, and schedule definitions. Store it in a user-owned private location with restrictive permissions and encryption, never `dist`, `outputs`, a public Git branch or an Actions artifact. Verify checksum and an isolated restore before migration. Do not print database credentials or record contents.
+- Run the reviewed migration in a transaction using the authorized operator. Copying happens before the new enqueue trigger is installed, so migration creates no classification or AI tasks. Count/per-ID JSON verification failure aborts. Compare workers, original archive, manual classification cache, original raw/amount/review fields, and task progress against the final baseline.
+- Package and deploy `ai-matching` and `classification-worker` with the preserved 204 RPC fix and all referenced shared files. Include `_shared/ai-rpc.ts`, `dist/human-save.js`, existing imported business-time/parser/matching files and any existing shared dependencies. Do not deploy from an incomplete hand-picked index-only bundle. No new secrets or schedules are required; keep existing settings. `recognize-order` has no code change in this task and must not be redeployed unnecessarily.
+- Publish the matching frontend commit after backend validation. Refresh clients; legacy `zy_orders_save` now refuses with a refresh message. Verify that the client reads `orderStorage: rows-v1`. Resume previous dispatcher configuration only when approved checks pass; do not manually trigger production AI or backfill as a migration test.
+- Disable maintenance and run the approved acceptance flow. The requested two-window edit/restore scenarios require explicit human edits to real business data; use isolated synthetic accounts/data for pre-release verification. Production audit itself is read-only: run `auditHumanOrders()` as administrator, report total and rejected/forbidden-rewrite counts only, and keep any detailed code report private.
+
+### Recovery
+
+If the migration aborts, all new schema/data changes roll back; maintenance and dispatcher pause remain for diagnosis. Before reopening writes, the unchanged legacy system and preserved backup can be used. After new writes have been accepted, never revert to the stale aggregate archive or overwrite production from it: keep maintenance, export new rows plus complete history and perform a separately reviewed forward repair. Every production recovery that changes business data needs a fresh private backup and explicit approval.
+
+## Validation and remaining release gates
+
+Added synthetic fixture tests for exact punctuation/brackets/salary/free text, permitted transforms, hard blockers, isolated save call chain, read-only login/sync, legacy conflict/race behavior and versioned transport. PGlite covers exact migration, stale snapshots for different/same records, append-only history, restore, soft delete, immutable fields, old RPC refusal, role write denials, and portable round-trip with history/deleted records. Both Pages and recognition workflows install locked dependencies and run `test:human-save` before release. Existing recognition fixtures are retained.
+
+Browser smoke was attempted with an isolated temporary SQLite database. After allowing localhost networking, installed Chrome exited with `SIGABRT` before opening a page. An isolated Playwright Chromium headless shell was downloaded under temporary storage and also exited before opening a page (`SIGTRAP`). This is an unresolved browser acceptance gate, not a pass; updated browser expectations must still be exercised in a working browser. No production audit or production acceptance has run. No production AI latency/availability claim is made.

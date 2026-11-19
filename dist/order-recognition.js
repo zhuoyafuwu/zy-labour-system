@@ -3,6 +3,7 @@ let singleRecognitionMeta=null;
 const recognitionWorkspace=window.newView;
 window.newView=function(){
  recognitionWorkspace();
+ attachHumanEditor();
  if(mode==='batch'&&!editing)return;
  singleRecognitionMeta=editing?{...(orders.find(o=>o.id===editing)||{})}:null;
  const raw=$('#raw');if(!raw)return;
@@ -84,7 +85,9 @@ async function reparseExistingOrder(){
  const old=orders.find(o=>o.id===editing),fresh=ZYCompanyText.draft(result.order);
  fresh.sourcePrefix=fresh.sourcePrefix||old?.sourcePrefix||$('#o-code').value.match(/ ([A-Z]+)$/)?.[1]||'';
  fresh.code=$('#o-code').value.trim();fresh.price=$('#o-price').value;
- singleRecognitionMeta=fresh;fillRecognisedFields(fresh);recognitionFeedback(['已生成重新识别预览，核对后保存才会修改公司单',...result.warnings],false,fresh);
+ const keys=Object.keys(orderFields).filter(k=>!['code','price'].includes(k));
+ window.adoptHumanSuggestion=key=>{const node=$('#o-'+key);if(node){node.value=fresh[key]??'';node.dispatchEvent(new Event('input',{bubbles:true}));humanWarnings()}};
+ $('#modal').innerHTML=`<h2>重新识别建议（不会自动替换）</h2><div class="human-conflict-scroll"><table><thead><tr><th>字段</th><th>建议文字</th><th>操作</th></tr></thead><tbody>${keys.map(k=>`<tr><th>${esc(orderFields[k])}</th><td data-user-content>${esc(fresh[k]??'')}</td><td><button onclick="adoptHumanSuggestion('${k}')">采纳此项</button></td></tr>`).join('')}</tbody></table></div><button onclick="$('#modal').close()">返回编辑</button>`;$('#modal').showModal();
 }
 function recognitionMetadata(order,meta){
  if(!meta)return {};
@@ -92,28 +95,10 @@ function recognitionMetadata(order,meta){
  const manual=Object.keys(previous).filter(key=>String(order[key]??'')!==String((key==='salary'?ZYOrderParser.formatCompanySalary(previous[key]):previous[key])??''));
  return {matchProfile:meta.matchProfile||null,aiProvider:meta.aiProvider||'',aiModel:meta.aiModel||'',aiEvidence:meta.aiEvidence||'',aiWarnings:meta.aiWarnings||'',boundaryMode:meta.boundaryMode||'',sourcePrefix:order.sourcePrefix||meta.sourcePrefix||'',parserVersion:meta.parserVersion||'',parsedSnapshot:meta.parsedSnapshot||'',manualFields:JSON.stringify(manual),recognitionAudit:meta.recognitionAudit||'',reviewConfirmation:meta.reviewConfirmation||'',humanReviewedSource:meta.humanReviewedSource||'',humanReviewedAt:meta.humanReviewedAt||'',humanReviewedBy:meta.humanReviewedBy||''};
 }
-window.saveOrder=async function(){
- const data=read(orderFields),input=$('#raw').value.trim();
- if(!input||!data.title||!data.code)return toast('请填写原单、职位名称和公司单号');
- const oldRecord=editing?orders.find(o=>o.id===editing):null;
- const origin=data.code.match(/ ([A-Z]+)$/)?.[1]||singleRecognitionMeta?.sourcePrefix||ZYOrderParser.sourcePrefix(input);
- const candidate=ZYOrderParser.sanitizeCompany({...data,boundaryMode:oldRecord?.boundaryMode||singleRecognitionMeta?.boundaryMode||'',sourcePrefix:origin,raw:oldRecord?.raw??ZYOrderParser.sanitizeRaw(input)});
- if(!editing)Object.assign(candidate,ZYCompanyText.convert(candidate));candidate.salary=ZYOrderParser.formatCompanySalary(candidate.salary);candidate.price=priceN(candidate.price)>0?priceFmt(candidate.price):'';
- if(editing)Object.assign(candidate,ZYOrderParser.humanReviewMetadata(candidate,sessionUser?.username));
- const problems=ZYOrderParser.validateCompany(candidate,!!editing);if(problems.length){recognitionFeedback(problems,candidate.boundaryMode!=='explicit'&&ZYOrderParser.splitOrders(input).length>1);return toast(problems[0])}
- if(orders.some(o=>o.id!==editing&&ZYOrderParser.baseCode(o.code)===ZYOrderParser.baseCode(candidate.code)))return toast('公司单号已存在，请修改');
- const baseline=singleRecognitionMeta?.parsedSnapshot&&ZYOrderParser.sanitizeRaw(singleRecognitionMeta.raw||'')===ZYOrderParser.sanitizeRaw(input)?singleRecognitionMeta:ZYOrderParser.parse(input,candidate.code);
- const metadata=recognitionMetadata(candidate,{...baseline,reviewConfirmation:singleRecognitionMeta?.reviewConfirmation||''});
- if(editing||ZYOrderParser.hasReviewConfirmation({...candidate,...metadata})||ZYOrderParser.isHumanReviewed(oldRecord||{}))Object.assign(metadata,ZYOrderParser.humanReviewMetadata(candidate,sessionUser?.username));
- const before=orders;
- if(editing)orders=orders.map(o=>o.id===editing?ZYRecognitionArchive.clean({...o,...candidate,...metadata,status:status(candidate.price)}):o);
- else orders=[{...candidate,...metadata,id:crypto.randomUUID(),createdAt:new Date().toISOString(),status:status(candidate.price)},...orders];
- if(!await persist()){orders=before;return}
- const savedId=editing||orders[0].id,wasEditing=!!editing;singleRecognitionMeta=null;leaveOrderEditor();if(!wasEditing)showSavedOrder(savedId);toast('劳务单已保存');
-};
+window.saveOrder=async function(){return saveHumanOrder()};
 window.copyOrder=async function(id){
  const record=orders.find(o=>o.id===id);if(!record)return;
- if(orderState(record)!=='ready')return toast(priceN(record.price)<=0?'请先确认金额':orderPublication(record).problems[0]);
+ if(priceN(record.price)<=0)return toast('请先确认金额');
  try{await navigator.clipboard.writeText(publish(record));toast('公司单已复制')}catch{toast('复制失败，请展开公司单选择文字复制')}
 };
 let pendingOrderReview=null;
@@ -121,7 +106,7 @@ function reviewList(title,items,userContent=false){return items.length?`<section
 window.markOrderReviewed=function(id){
  const record=orders.find(order=>order.id===id);if(!record||!sessionUser)return;
  const report=ZYOrderParser.reviewOrder(record.raw||'',record),metadata=ZYOrderParser.humanReviewMetadata(record,sessionUser.username);
- const blockers=ZYOrderParser.validateCompany({...ZYOrderParser.present(record),...metadata},true);
+ const blockers=ZYHumanSave.issues(record,orders).map(x=>x.message);
  pendingOrderReview={id,record:JSON.stringify(record),owner:sessionUser.id};
  $('#modal').innerHTML=`<h2>确认人工核对</h2><p data-user-content>${esc(record.code)} · ${esc(record.title)}</p>${reviewList('待核对提示',report.warnings)}${!report.warnings.length&&!report.unclassified.length&&!report.conflicts.length?'<p>未发现额外核对项目，仍请确认识别结果。</p>':''}${reviewList('未分类内容',report.unclassified,true)}${reviewList('冲突内容',report.conflicts.map(item=>item.text),true)}${report.excluded.length?`<section class="review-dialog-section"><h3>已排除内容与原因</h3><table class="source-table"><tbody>${report.excluded.map(item=>`<tr><td data-user-content>${esc(item.text)}</td><td>${recognitionExclusionReasons[item.reason]||'已排除'}</td></tr>`).join('')}</tbody></table></section>`:''}${reviewList('请先修改以下问题',blockers)}<div class="actions"><button onclick="$('#modal').close()">取消</button>${blockers.length?'<button class="primary" onclick="editPendingReview()">编辑公司单</button>':'<button class="primary" id="confirm-order-review" onclick="confirmOrderReview()">确认已人工核对</button>'}</div>`;
  $('#modal').showModal();
@@ -131,7 +116,7 @@ window.confirmOrderReview=async function(){
  const pending=pendingOrderReview,record=orders.find(order=>order.id===pending?.id);if(!record||!sessionUser||sessionUser.id!==pending.owner)return;
  if(JSON.stringify(record)!==pending.record)return toast('订单已变化，请重新打开核对');
  const metadata=ZYOrderParser.humanReviewMetadata(record,sessionUser.username);
- const problems=ZYOrderParser.validateCompany({...ZYOrderParser.present(record),...metadata},true);if(problems.length)return toast(problems[0]);
+ const problems=ZYHumanSave.issues(record,orders).map(x=>x.message);if(problems.length)return toast(problems[0]);
  const before=orders;orders=orders.map(order=>order.id===record.id?{...order,...metadata}:order);
  if(!await persist()){orders=before;return;}
  pendingOrderReview=null;$('#modal').close();render();toast('公司单已人工核对');

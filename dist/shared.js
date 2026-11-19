@@ -1,12 +1,10 @@
 // Application API; Supabase for free static hosting, same-origin SQLite for self-hosting.
 let lastSync=0,pendingSync=null;const cloudMode=window.ZY_CONFIG?.provider==='supabase';let cloud=null;
 async function api(path,{method='GET',body}={}){
-  if(path==='/api/orders'&&method==='PUT'&&Array.isArray(body?.orders))body={...body,orders:ZYRecognitionArchive.cleanOrders(body.orders)};
-  if(path==='/api/import'&&Array.isArray(body?.payload?.orders))body={...body,payload:{...body.payload,orders:ZYRecognitionArchive.cleanOrders(body.payload.orders)}};
-  if(cloudMode){try{if(!cloud)throw new Error('云端尚未配置');return await cloud.call(path,{method,body})}catch(e){if(e.status===401&&path!=='/api/login')loginScreen('登录已过期，请重新登录');throw e}}
+  if(cloudMode){try{if(!cloud)throw new Error('云端尚未配置');return await cloud.call(path,{method,body})}catch(e){if(e.status===401&&path!=='/api/login'){if(saving||view==='new')e.message='登录已过期，当前输入已保留，请重新登录后重试';else loginScreen('登录已过期，请重新登录')}throw e}}
   const response=await fetch(path,{method,credentials:'same-origin',cache:'no-store',headers:{...(body?{'Content-Type':'application/json'}:{}),...(csrf?{'X-CSRF-Token':csrf}:{})},body:body?JSON.stringify(body):undefined});
   let data;try{data=await response.json()}catch{throw new Error('服务器响应异常，请稍后重试')}
-  if(!response.ok){if(response.status===401&&path!=='/api/login')loginScreen('登录已过期，请重新登录。');throw new Error(data.error||'请求失败')}
+  if(!response.ok){if(response.status===401&&path!=='/api/login'&&!saving&&view!=='new')loginScreen('登录已过期，请重新登录。');throw Object.assign(new Error(data.error||'请求失败'),{status:response.status,code:data.code})}
   return data;
 }
 function loginScreen(message=''){window.ZYAIMatching?.reset();
@@ -21,19 +19,14 @@ async function enterWorkspace(data){
  window.ZYMatchUI?.reset();window.ZYClassAdmin?.reset();
   sessionUser=data.user;csrf=data.csrf;
   let result=await api('/api/orders');
-  const repaired=ZYRecognitionArchive.cleanOrders(ZYOrderParser.repairLegacyOrders(result.orders));
-  if(JSON.stringify(repaired)!==JSON.stringify(result.orders)){
-    try{const saved=await api('/api/orders',{method:'PUT',body:{orders:repaired,revision:result.revision}});result={orders:repaired,revision:saved.revision}}
-    catch(e){result=await api('/api/orders');toast('旧公司单修正尚未完成：'+e.message)}
-  }
-  orders=result.orders;revision=result.revision;
+  ZYOrderStore.note(result);orders=result.orders;revision=result.revision;
   $('#login')?.remove();$('aside').hidden=false;$('main').hidden=false;
   $('aside footer').innerHTML=`<span><span data-user-content>${esc(sessionUser.username)}</span> · ${sessionUser.role==='admin'?'管理员':'员工'}</span><div class="actions"><button onclick="accountDialog()">账号设置</button><button onclick="logout()">退出</button></div><div id="syncStatus" style="margin-top:10px">团队资料已连接</div><button type="button" class="sidebar-language" data-language-pair data-language-toggle onclick="ZYI18n.toggle()">中文 / English</button>`;
   worker={};editing=null;selectedOrderId=null;detailTab='company';go('dashboard');lastSync=Date.now();
 }
 async function logout(){window.ZYAIMatching?.reset();if(!ZYDrafts.confirmAll())return;try{await api('/api/logout',{method:'POST',body:{}});loginScreen('已退出登录')}catch(e){toast(e.message)}}
 async function accountDialog(){
-  $('#modal').innerHTML=`<h2>账号设置</h2><p>${esc(sessionUser.username)} · ${sessionUser.role==='admin'?'管理员':'员工'}</p><form id="passwordForm"><h3>修改密码</h3><label>当前密码<input name="current" type="password" autocomplete="current-password" required></label><label>新密码（至少12个字符）<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>确认新密码<input name="confirm" type="password" autocomplete="new-password" required></label><button style="margin-top:12px" class="primary">修改并重新登录</button></form>${sessionUser.role==='admin'?'<hr><h3>团队账号</h3><div id="teamUsers">读取中…</div><form id="userForm"><h3>开通新账号</h3><label>账号<input name="username" required autocomplete="off"></label><label>初始密码（至少12个字符）<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>角色<select name="role"><option value="staff">员工（管理共享订单和劳工资料）</option><option value="admin">管理员（另可管理账号）</option></select></label><button class="primary" style="margin-top:12px">开通账号</button></form><hr><h3>备份与迁移</h3><button onclick="previewCompanySimplification()">公司单简体转换预览</button><p id="maintenanceStatus">读取维护状态…</p><button onclick="setMaintenance(true)">暂停业务写入</button> <button onclick="setMaintenance(false)">恢复业务写入</button><p class="muted">迁移前暂停写入，再导出最终备份。暂停后仍可查看资料。</p><button onclick="exportPortable()">导出完整业务资料</button> <button onclick="choosePortable()">恢复到空数据库</button><input type="file" id="portableFile" accept="application/json,.json" hidden onchange="importPortable(this.files[0]);this.value=null"> <p class="muted">包含订单、劳工、照片及附件；不包含账号密码。JSON可迁移至其他数据库。</p><button onclick="migrateLocal()">导入本浏览器旧资料</button><p class="muted">手动确认后才上传；仅适用于同一浏览器和原网站来源内的旧资料，不覆盖现有记录。</p>':''}<div class="actions"><button onclick="$('#modal').close()">关闭</button></div>`;
+  $('#modal').innerHTML=`<h2>账号设置</h2><p>${esc(sessionUser.username)} · ${sessionUser.role==='admin'?'管理员':'员工'}</p><form id="passwordForm"><h3>修改密码</h3><label>当前密码<input name="current" type="password" autocomplete="current-password" required></label><label>新密码（至少12个字符）<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>确认新密码<input name="confirm" type="password" autocomplete="new-password" required></label><button style="margin-top:12px" class="primary">修改并重新登录</button></form>${sessionUser.role==='admin'?'<hr><h3>团队账号</h3><div id="teamUsers">读取中…</div><form id="userForm"><h3>开通新账号</h3><label>账号<input name="username" required autocomplete="off"></label><label>初始密码（至少12个字符）<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required></label><label>角色<select name="role"><option value="staff">员工（管理共享订单和劳工资料）</option><option value="admin">管理员（另可管理账号）</option></select></label><button class="primary" style="margin-top:12px">开通账号</button></form><hr><h3>备份与迁移</h3><button onclick="auditHumanOrders()">人工保存只读巡检</button><button onclick="browseOrderHistory()">公司单历史与已删除记录</button><button onclick="previewCompanySimplification()">公司单简体转换预览</button><p id="maintenanceStatus">读取维护状态…</p><button onclick="setMaintenance(true)">暂停业务写入</button> <button onclick="setMaintenance(false)">恢复业务写入</button><p class="muted">迁移前暂停写入，再导出最终备份。暂停后仍可查看资料。</p><button onclick="exportPortable()">导出完整业务资料</button> <button onclick="choosePortable()">恢复到空数据库</button><input type="file" id="portableFile" accept="application/json,.json" hidden onchange="importPortable(this.files[0]);this.value=null"> <p class="muted">包含订单、劳工、照片及附件；不包含账号密码。JSON可迁移至其他数据库。</p><button onclick="migrateLocal()">导入本浏览器旧资料</button><p class="muted">手动确认后才上传；仅适用于同一浏览器和原网站来源内的旧资料，不覆盖现有记录。</p>':''}<div class="actions"><button onclick="$('#modal').close()">关闭</button></div>`;
   $('#modal').showModal();$('#passwordForm').onsubmit=async e=>{e.preventDefault();const form=new FormData(e.target);if(form.get('password')!==form.get('confirm'))return toast('两次输入的新密码不一致');try{await api('/api/password',{method:'POST',body:{current:form.get('current'),password:form.get('password')}});loginScreen('密码已修改，请使用新密码登录')}catch(err){toast(err.message)}};
   if(sessionUser.role==='admin'){
     const account=$('#userForm input[name=username]');account.type=cloudMode?'email':'text';if(!cloudMode)account.pattern='[a-zA-Z0-9_.-]{3,64}';
@@ -46,7 +39,7 @@ async function disableUser(id){if(!confirm('停用此账号并立即撤销其登
 async function performSync(){
  if(!sessionUser||saving||document.hidden||$('#modal').open||!['dashboard','orders','workerRecords','match'].includes(view))return;
  const syncView=view,syncUser=sessionUser.id;
- try{const data=await api('/api/orders');if(saving||view!==syncView||sessionUser?.id!==syncUser||$('#modal').open)return;const changed=data.revision!==revision;orders=data.orders;revision=data.revision;updateReviewCount();if(changed&&['dashboard','orders'].includes(view))render();if(view==='workerRecords')await recordsView();if(view==='match'){await loadWorkers();await loadJobTaxonomy(true);if(view!==syncView||sessionUser?.id!==syncUser)return;await matchView({load:false,sync:true})}lastSync=Date.now();const maintenance=await api('/api/maintenance');if($('#syncStatus'))$('#syncStatus').textContent=maintenance.readOnly?'维护中 · 只读，已暂停写入':'团队资料已同步'}catch(e){if($('#syncStatus'))$('#syncStatus').textContent='连接中断，正在重试；请勿关闭未保存表单'}
+ try{const data=await api('/api/orders');if(saving||view!==syncView||sessionUser?.id!==syncUser||$('#modal').open)return;const changed=data.revision!==revision;ZYOrderStore.note(data);orders=data.orders;revision=data.revision;updateReviewCount();if(changed&&['dashboard','orders'].includes(view))render();if(view==='workerRecords')await recordsView();if(view==='match'){await loadWorkers();await loadJobTaxonomy(true);if(view!==syncView||sessionUser?.id!==syncUser)return;await matchView({load:false,sync:true})}lastSync=Date.now();const maintenance=await api('/api/maintenance');if($('#syncStatus'))$('#syncStatus').textContent=maintenance.readOnly?'维护中 · 只读，已暂停写入':'团队资料已同步'}catch(e){if($('#syncStatus'))$('#syncStatus').textContent='连接中断，正在重试；请勿关闭未保存表单'}
 }
 async function migrateLocal(){
  let localOrders=[];try{localOrders=JSON.parse(localStorage.getItem(key)||'[]')}catch{return toast('旧订单格式异常，未上传')}
@@ -57,13 +50,13 @@ async function migrateLocal(){
  if(!additions.length&&!localWorkers.length)return toast('本浏览器没有可导入的旧资料（示例订单不导入）');
  if(!confirm(`将 ${additions.length} 份旧订单及 ${localWorkers.length} 份劳工资料上传至团队服务器，所有团队账号可查看。原浏览器资料仍保留。确认继续？`))return;
  let orderCount=0,workerCount=0;
- try{const current=await api('/api/orders');const pending=additions.filter(o=>!current.orders.some(x=>x.id===o.id||x.code===o.code));if(pending.length){const r=await api('/api/orders',{method:'PUT',body:{orders:pending.concat(current.orders),revision:current.revision}});revision=r.revision;orders=pending.concat(current.orders);orderCount=pending.length}
+ try{const current=await api('/api/orders');ZYOrderStore.note(current);orders=current.orders;const pending=additions.filter(o=>!current.orders.some(x=>x.id===o.id||x.code===o.code));if(pending.length){const r=await ZYOrderStore.writeList(pending.concat(current.orders),api,humanResolveConflict);revision=r.revision;orders=r.orders;orderCount=pending.length}
  await loadWorkers();for(const old of localWorkers){if(workers.some(w=>w.id===old.id))continue;const copy={...old};delete copy._version;await dbWrite('put',copy);workerCount++}
  toast(`已导入 ${orderCount} 份订单、${workerCount} 份劳工资料；重复记录已跳过`)
  }catch(e){toast(`已导入 ${orderCount} 份订单、${workerCount} 份资料。${e.message}。可重试，已有ID不重复导入`)}
 }
 async function setMaintenance(readOnly){if(!confirm(readOnly?'暂停所有业务资料写入，以便备份迁移？':'恢复业务写入？'))return;try{const data=await api('/api/maintenance',{method:'POST',body:{readOnly}});$('#maintenanceStatus').textContent=data.readOnly?'当前：已暂停写入（只读）':'当前：正常读写';toast('维护状态已更新')}catch(e){toast(e.message)}}
-async function exportPortable(){try{const data=await api('/api/export');data.orders=ZYRecognitionArchive.cleanOrders(data.orders);const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`zy-full-backup-${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整备份已生成，请保存到私人位置')}catch(e){toast(e.message)}}
+async function exportPortable(){try{const data=await api('/api/export');const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`zy-full-backup-${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('完整备份已生成，请保存到私人位置')}catch(e){toast(e.message)}}
 function choosePortable(){$('#portableFile').click()}
 async function importPortable(file){
  if(!file)return;

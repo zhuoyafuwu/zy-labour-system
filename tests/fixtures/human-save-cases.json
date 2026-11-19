@@ -1,0 +1,69 @@
+[
+  {
+    "code": "SYN-01",
+    "title": "岗位【洗头员】",
+    "gender": "女",
+    "notes": "【食宿情况】不包吃，住宿打20%",
+    "salary": "底薪：HKD18500工资，包住扣15-20%,",
+    "requirements": "熟悉「洗护」。",
+    "hours": "8小时，月休4天",
+    "age": "35岁以下（长相漂亮可40岁以下）"
+  },
+  {
+    "code": "SYN-02",
+    "title": "合成理货员",
+    "gender": "男女不限",
+    "salary": "HKD17120+提成",
+    "notes": "  保留两端空格，句号。  "
+  },
+  {
+    "code": "SYN-03",
+    "title": "合成文员",
+    "gender": "男",
+    "salary": "HKD15000+；准时上班津贴 HK$1118 …"
+  },
+  {
+    "code": "SYN-04",
+    "title": "合成技术员",
+    "gender": "男女不限",
+    "salary": "HKD18000-20000；面试定薪）+加班另计"
+  },
+  {
+    "code": "SYN-05",
+    "title": "合成服務員",
+    "gender": "女",
+    "language": "粵語、視頻面試",
+    "expected": {
+      "title": "合成服务员",
+      "language": "粤语、视频面试"
+    }
+  },
+  {
+    "code": "SYN-06",
+    "title": "合成\u0002仓管",
+    "gender": "男",
+    "notes": "保留 ​字间空格\n\t下一行。",
+    "expected": {
+      "title": "合成仓管",
+      "notes": "保留 字间空格\n\t下一行。"
+    }
+  },
+  {
+    "code": "SYN-empty-title",
+    "title": "   ",
+    "gender": "女",
+    "expectedError": "title"
+  },
+  {
+    "code": "SYN-duplicate",
+    "title": "合成岗位",
+    "gender": "男",
+    "expectedError": "code"
+  },
+  {
+    "code": "SYN-no-gender",
+    "title": "合成岗位",
+    "gender": "",
+    "expectedError": "gender"
+  }
+]

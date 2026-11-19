@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert staff.locator('#o-gender').evaluate('(e)=>e.tagName')=='SELECT'
             assert staff.locator('#o-gender option').all_text_contents()==['请选择招聘性别','男','女','男女不限']
             set_amount(staff,'#o-price','3.8w');staff.evaluate('saveOrder()')
-            assert '请选择招聘性别' in staff.locator('.toast').inner_text()
+            assert '请选择招聘性别' in staff.locator('#human-save-error').inner_text()
             assert staff.evaluate('orders.length')==0
             staff.locator('#o-gender').select_option('男女不限');staff.evaluate('saveOrder()');staff.wait_for_selector('.order-row',state='attached')
             assert staff.evaluate('filters.orders.range')=='today' and staff.evaluate('selectedOrderId===orders[0].id')
@@ -57,9 +57,12 @@ with tempfile.TemporaryDirectory() as tmp:
             # Two editors started from the same revision: second save must not overwrite.
             for page in [admin,staff]:page.evaluate('editOrder(orders[0].id)')
             staff.locator('#o-title').fill('同事已修订');staff.evaluate('saveOrder()');staff.wait_for_selector('.order-row',state='attached')
-            admin.locator('#o-title').fill('过期修改');admin.evaluate('saveOrder()')
+            admin.locator('#o-title').fill('过期修改');admin.evaluate('void saveOrder()');admin.wait_for_selector('#modal[open]')
             assert admin.locator('#o-title').input_value()=='过期修改'
-            assert '其他人已修改' in admin.locator('.toast').inner_text()
+            assert '其他同事修改' in admin.locator('#modal').inner_text()
+            assert admin.locator('#modal button').filter(has_text='保留我的').is_visible()
+            admin.locator('#modal button').filter(has_text='返回编辑').click()
+            assert '当前输入已保留' in admin.locator('#human-save-error').inner_text()
             assert staff.evaluate('orders[0].raw.includes("共享厨师")')
             admin.evaluate("go('orders');syncShared()")
             admin.wait_for_function("orders[0].title==='同事已修订'")
@@ -143,7 +146,7 @@ with tempfile.TemporaryDirectory() as tmp:
             import json
             assert admin.evaluate('batch.every(o=>!("firstRecognition" in o))')
             assert admin.evaluate("batch.every(o=>!o.raw.includes('AT-'))")
-            admin.evaluate('saveBatch()');assert '请选择' in admin.locator('.toast').inner_text() or '选择招聘性别' in admin.locator('.toast').inner_text()
+            admin.evaluate('saveBatch()');assert '选择招聘性别' in admin.locator('#human-save-error').inner_text()
             assert admin.locator('#batch-fields input,#batch-fields textarea:not([readonly]),#batch-fields select').count()==admin.evaluate('Object.keys(orderFields).length+1')
             assert admin.locator('#batch-fields [id]:not([readonly]):not([id$="-fee-note"])').evaluate_all('(elements)=>elements.map(e=>e.id.slice(4)).sort()')==admin.evaluate('Object.keys(orderFields).sort()')
             admin.locator('#b-0-gender').select_option('女')
@@ -184,7 +187,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert admin.evaluate('orders[1].customFeeNote')=='劳务，服务费管理费：4.6w全包\n批量人工备注'
             assert admin.evaluate('orders.slice(0,2).every(o=>!("firstRecognition" in o))')
             assert admin.evaluate("orders.every(o=>['男','女','男女不限'].includes(o.gender))")
-            # Reload repairs only known legacy parser artifacts and V-date codes, preserving raw.
+            # Login and reload must preserve legacy records byte for byte; repairs require a separate human action.
             admin.evaluate("""async()=>{const old={...orders[0],id:'legacy-kitchen',code:'V-11.3-01',title:'西餐帮厨',gender:'要求】 男',salary:'薪酬】 16310/月',createdAt:'2026-11-03T08:00:00Z',raw:'【岗位】西餐帮厨\\n【性别要求】男\\n【工资薪酬】16310/月'};const result=await api('/api/orders',{method:'PUT',body:{orders:[old,...orders],revision}});revision=result.revision}""")
             admin.locator('aside footer [data-language-toggle]').click()
             admin.reload();admin.wait_for_selector('#syncStatus')
@@ -195,11 +198,11 @@ with tempfile.TemporaryDirectory() as tmp:
             admin.locator('.mobile-account-trigger').click();admin.locator('#modal [data-language-toggle]').click()
             admin.evaluate("document.querySelector('#modal').close()")
             fixed=admin.evaluate("orders.find(o=>o.id==='legacy-kitchen')")
-            assert fixed['code'].startswith('ZY-26-1103-')
-            assert fixed['gender']=='男' and fixed['salary']=='16310/月'
+            assert fixed['code']=='V-11.3-01'
+            assert fixed['gender']=='要求】 男' and fixed['salary']=='薪酬】 16310/月'
             assert fixed['raw']=='【岗位】西餐帮厨\n【性别要求】男\n【工资薪酬】16310/月'
             remote=staff.evaluate("api('/api/orders').then(x=>x.orders.find(o=>o.id==='legacy-kitchen'))")
-            assert remote['code']==fixed['code'] and remote['gender']=='男' and remote['salary']=='16310/月'
+            assert remote==fixed
             # Entry-mode boundaries, explicit batch segmentation and full supplier suffix.
             admin.set_viewport_size({'width':1440,'height':1000})
             multiple='侍应生 男女不限 35岁以下 粤语\n工资待遇：17500HKD 有工作餐 住宿扣2500\n工作时间：每周6天*10小时班\n总价30500元含劳务办证，保险另计\n\n粤菜厨师 男 45岁以下 粤语\n工资待遇：21000HKD 有工作餐 住宿扣2500\n工作时间：每周6天*10小时班\n要求：会海鲜类的中餐，有管理经验优先'
@@ -217,7 +220,9 @@ with tempfile.TemporaryDirectory() as tmp:
             source='需过港面试，附刀工视频\n岗位【SUPPLIER-20991234砧板师傅】\n（批文厨房帮工）\n工作要求：\n1.男性，30-40岁，有经验\n2.粤语流利\n3.工作时间：10.5小时，上6休1\n4.薪资待遇：$19000，包吃2餐，住宿扣2500\n津贴：HKD500\n31000'
             admin.evaluate("""async(raw)=>{const record={id:'recognition-preview',code:'ZY-26-1103-81',title:'（批文厨房帮工）',gender:'男',salary:'$19000，包吃2餐，住宿扣2500',price:'4.8w',status:'ready',createdAt:new Date().toISOString(),raw};const result=await api('/api/orders',{method:'PUT',body:{orders:[record,...orders],revision}});revision=result.revision;orders=[record,...orders]}""",source)
             admin.evaluate("editOrder('recognition-preview')")
-            admin.evaluate('reparseExistingOrder()')
+            admin.evaluate('reparseExistingOrder()');admin.wait_for_selector('#modal[open]')
+            assert admin.locator('#o-title').input_value()=='（批文厨房帮工）'
+            admin.evaluate("Object.keys(orderFields).filter(k=>!['code','price'].includes(k)).forEach(adoptHumanSuggestion);document.querySelector('#modal').close()")
             assert admin.locator('#o-title').input_value()=='砧板师傅'
             assert admin.locator('#o-code').input_value()=='ZY-26-1103-81'
             admin.locator('#o-code').fill('ZY-26-1103-81 SUPPLIER')
@@ -231,17 +236,17 @@ with tempfile.TemporaryDirectory() as tmp:
             assert unchanged['title']=='（批文厨房帮工）'
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             saved=admin.evaluate("api('/api/orders').then(x=>x.orders.find(o=>o.id==='recognition-preview'))")
-            assert saved['code']=='ZY-26-1103-81 SUPPLIER' and saved['sourcePrefix']=='SUPPLIER'
+            assert saved['code']=='ZY-26-1103-81 SUPPLIER' and not saved.get('sourcePrefix')
             assert saved['title']=='砧板师傅' and saved['salary']=='HKD19000；津贴：HKD500' and saved['raw']==source
-            assert isinstance(saved['parsedSnapshot'],str) and isinstance(saved['manualFields'],str)
+            assert not saved.get('humanReviewedAt')  # A save never manufactures a review result.
             # Manual removal/replacement of supplier suffix survives save, reload, and re-recognition.
             admin.evaluate("editOrder(orders.find(o=>o.code==='ZY-26-1103-81 SUPPLIER').id)")
             admin.locator('#o-code').fill('ZY-26-1103-81')
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             saved=admin.evaluate("api('/api/orders').then(r=>r.orders.find(o=>o.code==='ZY-26-1103-81'))")
-            assert saved and saved['sourcePrefix']=='SUPPLIER'
+            assert saved and not saved.get('sourcePrefix')
             assert admin.evaluate('o=>publish(o)',saved).startswith('ZY-26-1103-81｜')
-            admin.evaluate("editOrder(orders.find(o=>o.code==='ZY-26-1103-81').id);reparseExistingOrder()")
+            admin.evaluate("editOrder(orders.find(o=>o.code==='ZY-26-1103-81').id);reparseExistingOrder()");admin.wait_for_selector('#modal[open]');admin.evaluate("document.querySelector('#modal').close()")
             assert admin.locator('#o-code').input_value()=='ZY-26-1103-81'
             admin.locator('#o-code').fill('ZY-26-1103-81 OTHER');admin.evaluate('saveOrder()')
             admin.wait_for_selector('.order-row',state='attached')
@@ -275,11 +280,12 @@ with tempfile.TemporaryDirectory() as tmp:
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             reviewed=admin.evaluate("id=>api('/api/orders').then(result=>result.orders.find(o=>o.id===id))",pending)
             assert reviewed['raw']==unknown and reviewed['parserVersion']=='17'
-            assert isinstance(reviewed['recognitionAudit'],str) and reviewed['reviewConfirmation'] and reviewed['humanReviewedSource']
+            assert isinstance(reviewed['recognitionAudit'],str)
+            assert not reviewed.get('humanReviewedAt') and not reviewed.get('humanReviewedSource')
             assert '这份原单需要重新核对，暂不能生成发布稿' not in admin.evaluate('publish(orders[0])')
             assert admin.evaluate('o=>publish(o)',reviewed).startswith(reviewed['code'])
-            assert admin.evaluate('o=>ZYOrderParser.reviewOrder(o.raw,o).reviewed',reviewed) is True
-            assert admin.evaluate('o=>ZYOrderParser.validateCompany(o,true)',reviewed)==[]
+            assert admin.evaluate('o=>orderState(o)',reviewed)=='ready'
+            assert admin.evaluate('o=>ZYOrderParser.validateCompany(o,true).length>0',reviewed)  # Recognition warnings cannot block human publication.
             # Historical acknowledgements survive parser upgrades; one-click review changes metadata only.
             legacy=admin.evaluate("""async(record)=>{const copy={...record,id:'legacy-reviewed-token',code:'ZY-26-1103-97',humanReviewedSource:'',humanReviewedAt:'',humanReviewedBy:'',manualFields:'[]',reviewConfirmation:ZYOrderParser.reviewSignature(record.raw).replace(/^S1-/,'8-')};const result=await api('/api/orders',{method:'PUT',body:{orders:[copy,...orders],revision}});orders=[copy,...orders];revision=result.revision;go('orders');return copy}""",reviewed)
             assert admin.evaluate('o=>ZYOrderParser.validateCompany(o,true)',legacy)==[]
@@ -371,7 +377,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert admin.evaluate("o=>publish(o)",archive_record).find('firstRecognition')==-1
             admin.evaluate("id=>editOrder(id)",archive_record['id'])
             assert admin.locator('#o-fee-note').input_value()==custom_note
-            admin.evaluate('reparseExistingOrder()')
+            admin.evaluate('reparseExistingOrder()');admin.wait_for_selector('#modal[open]');admin.evaluate("document.querySelector('#modal').close()")
             assert admin.evaluate('!("firstRecognition" in singleRecognitionMeta)')
             admin.locator('#o-title').fill('人工核对职位二')
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
@@ -441,7 +447,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert admin.evaluate('typeof openOrderAudit')=='undefined'
             assert admin.evaluate('typeof startBackgroundOrderAudit')=='undefined'
             assert admin.locator('button[onclick="openOrderAudit()"]').count()==0
-            # Purge an old snapshot on workspace entry without changing any business field.
+            # Workspace entry must not purge or repair stored metadata.
             with sqlite3.connect(path) as seed_db:
                 old_state=seed_db.execute('SELECT orders FROM state WHERE id=1').fetchone()
                 seeded=json.loads(old_state[0]);business_before=[dict(record) for record in seeded]
@@ -449,12 +455,12 @@ with tempfile.TemporaryDirectory() as tmp:
                 seed_db.execute('UPDATE state SET orders=?,revision=revision+1 WHERE id=1',(json.dumps(seeded,ensure_ascii=False),))
             admin.evaluate("api('/api/session').then(enterWorkspace)")
             cleaned_state=admin.evaluate("api('/api/orders')")
-            assert cleaned_state['orders']==business_before
-            assert all('firstRecognition' not in record for record in cleaned_state['orders'])
+            assert cleaned_state['orders']==seeded
+            assert cleaned_state['orders'][0]['firstRecognition']=='legacy redundant private snapshot'
             staff.evaluate('logout()');staff.wait_for_selector('#loginForm')
             assert staff.evaluate("fetch('/api/orders').then(r=>r.status)")==401
             assert not errors,errors
             browser.close()
-            print('PASS: independent accounts share orders/workers, reload persistence, edit conflict protection, raw preservation, permissions, logout, light blue-grey mobile layout, source-ID removal, labelled single/batch job parsing, persisted legacy code/gender/salary repair, three-value gender selects and required confirmation, upstream quote confidentiality and exact salary autofill, full batch field parity, UI-only English/Chinese without form loss, whole-document splitting, full supplier prefix and review-before-save; no browser errors')
+            print('PASS: independent accounts share orders/workers, reload persistence, edit conflict protection, raw preservation, permissions, logout, light blue-grey mobile layout, source-ID removal, labelled single/batch job parsing, read-only login preserving legacy code/gender/salary, three-value gender selects and required confirmation, upstream quote confidentiality and exact salary autofill, full batch field parity, UI-only English/Chinese without form loss, whole-document splitting, full supplier prefix and review-before-save; no browser errors')
     finally:
         server.shutdown();server.server_close()

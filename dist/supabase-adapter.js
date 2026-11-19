@@ -35,6 +35,10 @@ window.ZYSupabase=class {
   if(path==='/api/job-classification-batch'||path==='/api/job-classification-admin')return this.request('/functions/v1/recognize-order',{method:'POST',token:await this.token(),body:path==='/api/job-classification-batch'?{action:'classification-batch',items:body.items}:{action:'classification-manage',operation:body.operation,data:body.data}});
   if(path==='/api/match-profile')return this.request('/functions/v1/recognize-order',{method:'POST',token:await this.token(),body:{action:'match-profile',kind:body.kind,input:body.input,force:!!body.force}});
   if(path==='/api/session')return this.rpc('zy_session');
+  if(path==='/api/order-save')return this.rpc('zy_order_save',{p_order:body.order,p_base_version:body.baseVersion});
+  if(path==='/api/order-delete')return this.rpc('zy_order_delete',{p_id:body.id,p_base_version:body.baseVersion});
+  if(path==='/api/order-history')return this.rpc('zy_order_history',{p_id:body.id});
+  if(path==='/api/order-restore')return this.rpc('zy_order_restore',{p_id:body.id,p_version:body.version});
   if(path==='/api/orders')return method==='GET'?this.rpc('zy_orders_get'):this.rpc('zy_orders_save',{p_orders:body.orders,p_revision:body.revision});
   if(path==='/api/workers'){
    if(method==='GET')return this.rpc('zy_workers_get');

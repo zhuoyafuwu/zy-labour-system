@@ -7,6 +7,7 @@ on:
       - 'tests/**'
       - 'supabase/functions/**'
       - 'supabase/migrations/**'
+      - 'supabase/pending-migrations/**'
       - 'scripts/check.mjs'
       - 'package.json'
       - 'docs/recognition-rules.md'
@@ -18,6 +19,7 @@ on:
       - 'tests/**'
       - 'supabase/functions/**'
       - 'supabase/migrations/**'
+      - 'supabase/pending-migrations/**'
       - 'scripts/check.mjs'
       - 'package.json'
       - 'docs/recognition-rules.md'
@@ -33,7 +35,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      # These checks use Node built-ins; no credentials or business data are required.
+      - run: npm ci
+      - run: npm run test:human-save
+      # Checks use only synthetic data and require no credentials.
       - run: npm run check
       - run: npm run test:parser
       - run: npm run test:transport

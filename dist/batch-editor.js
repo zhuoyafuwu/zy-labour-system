@@ -48,16 +48,4 @@ async function reparseBatchItem(){
  const owner=sessionUser,previous=batch[activeBatch],before=JSON.stringify(previous),raw=$('#batch-item-raw').value.trim();if(!raw)return toast('请先粘贴原单');
  const result=await ZYAI.enhance(ZYOrderParser.analyze(raw,previous.code,{explicitBoundary:true}));if(sessionUser!==owner||batch[activeBatch]!==previous)return;if(JSON.stringify(previous)!==before)return toast('表单已修改，未覆盖人工内容');if(!result.order)return toast(result.warnings[0]);const parsed=ZYCompanyText.draft(result.order);parsed.salary=ZYOrderParser.formatCompanySalary(parsed.salary);parsed.sourcePrefix=parsed.sourcePrefix||previous.sourcePrefix||'';parsed.code=previous.code;parsed.price=suggestion(parsed.salary);batch[activeBatch]=parsed;renderBatch();toast('整理完成，请核对各项信息');
 }
-window.saveBatch=async function(){
- if(!batch.length)return toast('没有可保存的原单');
- const used=new Set(orders.map(o=>ZYOrderParser.baseCode(o.code)));
- for(let i=0;i<batch.length;i++){
-  const o=ZYCompanyText.convert(batch[i]);batch[i]=o;const fail=message=>{activeBatch=i;renderBatch();toast(`第 ${i+1} 份：${message}`)};
-  if(!o.raw?.trim()||!o.title?.trim()||!o.code?.trim())return fail('请填写原单、职位名称和公司单号');
-  const candidate=ZYOrderParser.sanitizeCompany(o),issues=ZYOrderParser.validateCompany(candidate);if(issues.length)return fail(issues[0]);
-  if(used.has(ZYOrderParser.baseCode(candidate.code)))return fail('公司单号已存在，请修改');used.add(ZYOrderParser.baseCode(candidate.code));
- }
- const added=batch.map(o=>ZYOrderParser.sanitizeCompany({...Object.fromEntries(Object.keys(orderFields).map(k=>[k,String(o[k]??'').trim()])),customFeeNote:o.customFeeNote??null,raw:ZYOrderParser.sanitizeRaw(o.raw),sourcePrefix:o.sourcePrefix||'',...recognitionMetadata(o,o),id:crypto.randomUUID(),createdAt:new Date().toISOString(),status:status(o.price)})).map(record=>({...record,salary:ZYOrderParser.formatCompanySalary(record.salary),price:priceN(record.price)>0?priceFmt(record.price):''}));
- const old=orders;orders=added.concat(orders);if(!await persist()){orders=old;return}
- batch=[];batchInput='';activeBatch=0;go('orders',{preserveOrders:true});showSavedOrder(added[0].id);toast('批量劳务单已保存');
-};
+window.saveBatch=async function(){return saveHumanBatch()};

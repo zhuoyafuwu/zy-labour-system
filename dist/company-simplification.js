@@ -8,4 +8,11 @@ async function previewCompanySimplification(){
  }catch(e){toast(e.message)}
 }
 function downloadCompanySimplification(){const p=companyConversionPlan;if(!p||sessionUser?.id!==p.owner)return;const suffix=ZYTime.todayKey()+'.json';downloadCompanyConversion('company-orders-backup-'+suffix,{revision:p.revision,orders:p.source});downloadCompanyConversion('company-conversion-preview-'+suffix,{revision:p.revision,count:p.count,changes:p.changed});$('#company-conversion-apply').disabled=!p.count}
-async function applyCompanySimplification(){const p=companyConversionPlan;if(!p||sessionUser?.role!=='admin'||sessionUser.id!==p.owner||sessionUser.readOnly)return;if(!confirm(ZYI18n.translate('确认已保存备份并执行公司单简体转换？')))return;const button=$('#company-conversion-apply');button.disabled=true;try{await api('/api/orders',{method:'PUT',body:{orders:p.orders,revision:p.revision}});companyConversionPlan=null;$('#modal').close();await performSync();toast('公司单简体转换完成')}catch(e){toast(e.message);companyConversionPlan=null;$('#modal').close()}}
+async function applyCompanySimplification(){const p=companyConversionPlan;if(!p||sessionUser?.role!=='admin'||sessionUser.id!==p.owner||sessionUser.readOnly)return;if(!confirm(ZYI18n.translate('确认已保存备份并执行公司单简体转换？')))return;const button=$('#company-conversion-apply');button.disabled=true;try{await saveCompanyConversion(p);companyConversionPlan=null;$('#modal').close();await performSync();toast('公司单简体转换完成')}catch(e){toast(e.message);button.disabled=false}}
+
+async function saveCompanyConversion(plan){
+ const fresh=await api('/api/orders');
+ for(const change of plan.changed){const old=plan.source.find(o=>o.id===change.id),current=fresh.orders.find(o=>o.id===change.id);if(JSON.stringify(old)!==JSON.stringify(current))throw Error('预览后有公司单变动，请重新预览和备份')}
+ let saved=0;
+ for(const change of plan.changed){const result=await ZYOrderStore.save(plan.orders.find(o=>o.id===change.id),plan.source.find(o=>o.id===change.id),api);if(result.conflict)throw Error(`已转换 ${saved} 张；另一张单已变化，请重新预览，未覆盖他人内容`);saved++}
+}
