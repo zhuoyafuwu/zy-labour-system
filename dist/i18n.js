@@ -1,6 +1,7 @@
 /* UI-only localisation. Never rerenders a form or translates business data. */
 (function(){
  const pairs=[
+ ["确认恢复历史版本","Confirm History Restore"],["确认恢复","Confirm Restore"],["返回历史","Return to History"],["恢复会生成新的修改历史，当前版本仍可找回。尚未保存的编辑会关闭。","Restoring creates a new history entry; the current version remains recoverable. Unsaved edits will close."],
  ["保存中", "Saving"],
  ["保留我的", "Keep Mine"],
  ["采用对方的", "Use Theirs"],
