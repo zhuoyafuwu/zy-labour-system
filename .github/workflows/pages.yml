@@ -31,6 +31,7 @@ jobs:
       - name: Check recognition regressions before publishing
         run: |
           npm run check
+          npm run test:ui
           npm run test:parser
       - name: Generate public cloud configuration
         env:

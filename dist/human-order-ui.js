@@ -12,7 +12,7 @@ function attachHumanEditor(){
  const save=document.querySelector('button[onclick="saveOrder()"]');if(!save)return;if(!editing)humanDraftIdentity={id:crypto.randomUUID(),createdAt:new Date().toISOString()};save.parentElement.classList.add('human-save-actions');save.dataset.humanSave='true';
  const node=document.createElement('p');node.id='human-save-error';node.setAttribute('role','alert');node.hidden=true;save.parentElement.append(node);
  for(const field of document.querySelectorAll('[id^="o-"]'))field.addEventListener('input',humanWarnings);
- humanWarnings();if(editing&&sessionUser?.role==='admin'&&ZYOrderStore.storage==='rows-v1'){const button=document.createElement('button');button.textContent='修改历史';button.onclick=()=>showOrderHistory(editing);save.after(button)}
+ humanWarnings();ZYUI.editorPreview();if(editing&&sessionUser?.role==='admin'&&ZYOrderStore.storage==='rows-v1'){const button=document.createElement('button');button.textContent='修改历史';button.onclick=()=>showOrderHistory(editing);save.after(button)}
 }
 async function humanResolveConflict(candidate,base,response){
  if(response.current.deleted||!response.current.data)throw Error('这张单已被删除，当前输入已保留；请先查看修改历史');

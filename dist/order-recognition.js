@@ -43,7 +43,7 @@ function recognitionFeedback(messages,multi=false,order=null){
  updateRecognitionReview(container,order);
 
 }
-function fillRecognisedFields(order){for(const key of Object.keys(orderFields))$('#o-'+key).value=(key==='salary'?ZYOrderParser.formatCompanySalary(order[key]):order[key])||'';refreshFeeNote()}
+function fillRecognisedFields(order){for(const key of Object.keys(orderFields))$('#o-'+key).value=(key==='salary'?ZYOrderParser.formatCompanySalary(order[key]):order[key])||'';refreshFeeNote();globalThis.ZYUI?.editorPreview()}
 function beginRecognitionProgress(button){
  if(!button||button.disabled)return null;
  button.disabled=true;button.setAttribute('aria-busy','true');
@@ -97,10 +97,12 @@ function recognitionMetadata(order,meta){
 }
 window.saveOrder=async function(){return saveHumanOrder()};
 window.copyOrder=async function(id){
- const record=orders.find(o=>o.id===id);if(!record)return;
- if(priceN(record.price)<=0)return toast('请先确认金额');
- try{await navigator.clipboard.writeText(publish(record));toast('公司单已复制')}catch{toast('复制失败，请展开公司单选择文字复制')}
+ const record=orders.find(o=>o.id===id);if(!record)return;if(priceN(record.price)<=0)return toast('请先确认金额');
+ if(selectedOrderId===id&&detailTab==='company'&&document.querySelector('.zy-slip'))return copyConfirmedOrder(id);
+ $('#modal').innerHTML=`<h2>复制公司单</h2>${ZYUI.companySlip(record)}<div class="actions"><button onclick="$('#modal').close()">返回</button><button class="primary" onclick="copyConfirmedOrder(${jsValue(id)})">复制公司单</button></div>`;$('#modal').showModal();
 };
+async function copyConfirmedOrder(id){const record=orders.find(o=>o.id===id);if(!record)return;try{await navigator.clipboard.writeText(publish(record));if($('#modal').open)$('#modal').close();toast('公司单已复制')}catch{toast('复制失败，请保留当前内容后重试')}}
+
 let pendingOrderReview=null;
 function reviewList(title,items,userContent=false){return items.length?`<section class="review-dialog-section"><h3>${title}</h3><ul>${items.map(text=>`<li ${userContent?'data-user-content':''}>${esc(text)}</li>`).join('')}</ul></section>`:''}
 window.markOrderReviewed=function(id){

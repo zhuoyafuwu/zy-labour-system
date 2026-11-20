@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "python3 server/app.py serve --dev",
-    "check": "node scripts/check.mjs && node --check dist/job-categories.js && node --check dist/job-classification.js && node --check dist/classification-admin.js && node --check dist/matching.js && node --check dist/match-view.js && node --check dist/business-time.js && node --check dist/shared.js && node --check dist/order-list.js && node --check dist/workflow-guards.js && node --check dist/supabase-adapter.js && node --check dist/order-parser.js && node --check dist/batch-editor.js && node --check dist/i18n.js && node --check dist/order-recognition.js && node --check dist/worker-registration.js && node --check dist/recognition-archive.js && node --check dist/ai-recognition.js && node --check dist/company-text.js && node --check dist/company-simplification.js && node --check dist/ai-matching.js && node --check dist/human-save.js && node --check dist/human-order-ui.js && node --check dist/order-store.js",
+    "check": "node scripts/check.mjs && node --check dist/job-categories.js && node --check dist/job-classification.js && node --check dist/classification-admin.js && node --check dist/matching.js && node --check dist/match-view.js && node --check dist/business-time.js && node --check dist/shared.js && node --check dist/order-list.js && node --check dist/workflow-guards.js && node --check dist/supabase-adapter.js && node --check dist/order-parser.js && node --check dist/batch-editor.js && node --check dist/i18n.js && node --check dist/order-recognition.js && node --check dist/worker-registration.js && node --check dist/recognition-archive.js && node --check dist/ai-recognition.js && node --check dist/company-text.js && node --check dist/company-simplification.js && node --check dist/ai-matching.js && node --check dist/human-save.js && node --check dist/human-order-ui.js && node --check dist/order-store.js && node --check dist/ui-system.js && node scripts/design-tokens.mjs --check",
     "test": "python3 -m unittest discover -s tests -v",
     "start:static": "python3 -m http.server 8080 --directory dist",
     "test:postgres": "node tests/postgres.mjs && node tests/job-taxonomy.mjs && node --experimental-strip-types tests/classification-tasks.ts && node --experimental-strip-types tests/classification-worker-auth.ts && node tests/classification-task-ui.mjs",
@@ -12,7 +12,8 @@
     "test:parser": "node tests/company-text.mjs && node tests/matching.mjs && node tests/classification-v2.mjs && node tests/matching-ai.mjs && node tests/business-time.mjs && node tests/order-parser.mjs && node tests/recognition.mjs && node tests/recognition-mechanism.mjs && node tests/ai-recognition.mjs",
     "test:tasks": "node --experimental-strip-types tests/classification-tasks.ts && node --experimental-strip-types tests/classification-worker-auth.ts && node tests/classification-task-ui.mjs",
     "test:ai-matching": "node --experimental-strip-types tests/ai-matching.ts",
-    "test:human-save": "node tests/human-save.mjs && node tests/human-save-db.mjs"
+    "test:human-save": "node tests/human-save.mjs && node tests/human-save-db.mjs",
+    "test:ui": "node tests/unified-ui.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14"

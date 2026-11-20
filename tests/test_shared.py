@@ -49,6 +49,13 @@ class SharedServerTests(unittest.TestCase):
                 self.assertEqual(response.headers.get_content_type(),'text/javascript')
                 self.assertEqual(response.read(),(Path(__file__).resolve().parents[1]/'dist'/asset).read_bytes())
 
+    def test_00_shared_interface_assets(self):
+        for asset in ['ui-system.js','design-tokens.css','base-layout.css','ui-components.css','unified-ui.css']:
+            with self.client().open(self.url+'/'+asset) as response:
+                self.assertEqual(response.status,200)
+                self.assertEqual(response.headers.get_content_type(),'text/javascript' if asset.endswith('.js') else 'text/css')
+                self.assertEqual(response.read(),(Path(__file__).resolve().parents[1]/'dist'/asset).read_bytes())
+
     def test_01_authentication_csrf_and_access(self):
         anonymous=self.client()
         for path in ['/api/orders','/api/workers','/api/users']:

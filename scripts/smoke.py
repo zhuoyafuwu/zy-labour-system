@@ -95,14 +95,22 @@ with tempfile.TemporaryDirectory() as tmp:
             admin.locator('aside footer [data-language-toggle]').click()
             # Account management UI and staff restrictions.
             admin.evaluate('accountDialog()');admin.wait_for_selector('#userForm')
-            assert 'colleague' in admin.locator('#teamUsers').inner_text()
+            assert admin.locator('#modal [data-language-toggle]').count()==0
+            assert admin.locator('[data-settings-tab]').count()==4
             admin.locator('#passwordForm [name=current]').fill('unsaved-test-value')
-            admin.locator('#modal [data-language-toggle]').click()
-            assert admin.locator('#modal h2').inner_text()=='Account Settings'
+            initial_language=admin.locator('html').get_attribute('lang')
+            admin.evaluate('ZYI18n.toggle()')
+            assert admin.locator('#modal > h2').inner_text()==('Settings' if initial_language=='zh-CN' else '设置')
             assert admin.locator('#passwordForm [name=current]').input_value()=='unsaved-test-value'
+            admin.evaluate('ZYI18n.toggle()')
+            admin.locator('[data-settings-tab="team"]').click()
+            assert 'colleague' in admin.locator('#teamUsers').inner_text()
+            admin.locator('#userForm [name=username]').fill('unsaved-team-input')
             assert admin.locator('#userForm select').input_value()=='staff'
-            admin.locator('#modal [data-language-toggle]').click()
+            admin.locator('[data-settings-tab="account"]').click()
             assert admin.locator('#passwordForm [name=current]').input_value()=='unsaved-test-value'
+            admin.locator('[data-settings-tab="team"]').click()
+            assert admin.locator('#userForm [name=username]').input_value()=='unsaved-team-input'
             admin.evaluate("document.querySelector('#modal').close()")
             staff.evaluate('accountDialog()');assert staff.locator('#userForm').count()==0
             staff.evaluate("document.querySelector('#modal').close()")

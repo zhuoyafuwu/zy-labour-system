@@ -15,10 +15,10 @@
   const paint=()=>{if(active()&&view==='match'&&selectedMatchWorker()?.id===worker.id)renderMatchPage({sync:true})};
   try{if(force)await api('/api/ai-matching',{method:'POST',body:{action:'profile',workerId:worker.id,force:true}});
    let prepared=await api('/api/ai-matching',{method:'POST',body:{action:'prepare',workerId:worker.id}});if(!active())return;for(let wait=0;prepared.status==='pending'&&wait<14&&active();wait++){paint();await new Promise(resolve=>setTimeout(resolve,2000));if(!active())return;prepared=await api('/api/ai-matching',{method:'POST',body:{action:'prepare',workerId:worker.id}})}if(!prepared.profile){current.status='failed';paint();return}
-   current.profile=prepared.profile;for(const row of prepared.items)if(row.result){current.results.set(row.orderId,{...row.result,hard:row.hard});current.done++}
+   current.profile=prepared.profile;current.total=prepared.items.length;for(const row of prepared.items)if(row.result){current.results.set(row.orderId,{...row.result,hard:row.hard});current.done++}
    const batches=[];const pending=prepared.items.filter(x=>!x.result).map(x=>x.orderId);for(let i=0;i<pending.length;i+=30)batches.push(pending.slice(i,i+30));paint();
    let next=0,failed=false;await Promise.all(Array.from({length:Math.min(6,batches.length)},async()=>{while(next<batches.length&&active()){const ids=batches[next++];try{const response=await api('/api/ai-matching',{method:'POST',body:{action:'match',workerId:worker.id,orderIds:ids}});if(!active())return;for(const row of response.items||[])if(row.result&&!current.results.has(row.orderId)){current.results.set(row.orderId,{...row.result,hard:row.hard});current.done++}if(response.status==='failed'||response.items?.some(x=>!x.result))failed=true;paint()}catch{failed=true}}}));
-   if(active()){current.status=failed?'failed':'ready';paint()}
+   if(active()){current.status=failed?'failed':'ready';if(!failed)current.completedAt=new Date().toISOString();paint()}
   }catch{if(active()){current.status='failed';paint()}}
  }
  async function saved(workerId){try{await api('/api/ai-matching',{method:'POST',body:{action:'profile',workerId}})}catch{/* Durable server job retries after a failed save-time attempt. */}}

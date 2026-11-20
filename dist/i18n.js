@@ -1,6 +1,31 @@
 /* UI-only localisation. Never rerenders a form or translates business data. */
 (function(){
  const pairs=[
+ ["规则高匹配","High Rule Matches"],
+ ["设置", "Settings"],
+ ["账号", "Account"],
+ ["团队成员", "Team Members"],
+ ["岗位分类", "Job Classification"],
+ ["资料备份", "Backups"],
+ ["公司单预览", "Company Order Preview"],
+ ["填写职位后显示公司单预览。", "Enter a job title to preview the company order."],
+ ["清除所选劳工", "Clear Selected Worker"],
+ ["选择劳工开始匹配", "Choose a Worker to Start Matching"],
+ ["查看匹配 →", "View Matches →"],
+ ["全部日期", "All Dates"],
+ ["公司单日期范围", "Order Date Range"],
+ ["匹配理由", "Match Reason"],
+ ["AI 暂时不可用，下面是规则结果", "AI is temporarily unavailable. Rule results are shown below."],
+ ["劳工未填期望薪金", "Desired pay was not provided"],
+ ["期望薪金待核对", "Desired pay needs review"],
+ ["性别不符", "Gender Mismatch"],
+ ["年龄超出", "Age Outside Range"],
+ ["经历不相关", "Unrelated Experience"],
+ ["其他条件", "Other Conditions"],
+ ["AI 与规则判断存在差异，建议人工确认。", "AI and rule results differ; please review."],
+ ["关闭提示", "Dismiss Notice"],
+ ["确认删除", "Confirm Delete"],
+
  ["确认恢复历史版本","Confirm History Restore"],["确认恢复","Confirm Restore"],["返回历史","Return to History"],["恢复会生成新的修改历史，当前版本仍可找回。尚未保存的编辑会关闭。","Restoring creates a new history entry; the current version remains recoverable. Unsaved edits will close."],
  ["保存中", "Saving"],
  ["保留我的", "Keep Mine"],
@@ -109,6 +134,9 @@
    else if((match=trimmed.match(/^第 (\d+) 份：([\s\S]+)$/)))translated=`Item ${match[1]}: ${translate(match[2])}`;
    else if((match=trimmed.match(/^共 (\d+) 份资料 · 团队共享资料$/)))translated=`${match[1]} records · Shared Team Records`;
    else if((match=trimmed.match(/^共 (\d+) 份$/)))translated=`${match[1]} ${Number(match[1])===1?'order':'orders'}`;
+   else if((match=trimmed.match(/^AI 分析中，已分析 (\d+) \/ 共 (\d+) 张$/)))translated=`AI analysis: ${match[1]} / ${match[2]} orders`;
+   else if((match=trimmed.match(/^AI 分析于 (\d{2}:\d{2})$/)))translated=`AI analysed at ${match[1]}`;
+   else if((match=trimmed.match(/^共 (\d+) 人$/)))translated=`${match[1]} workers`;
    else if(trimmed==='份')translated='orders';
    else if((match=trimmed.match(/^(录入|更新于)\s+(.+)$/)))translated=`${dictionary.get(match[1])} ${match[2]}`;
    else if(trimmed.includes('·')){const parts=trimmed.split('·');if(parts.some(p=>dictionary.has(p.trim())))translated=parts.map(p=>dictionary.get(p.trim())||p.trim()).join(' · ')}
@@ -120,7 +148,7 @@
  function localise(){
   observer.disconnect();
   try{
-   const modal=document.getElementById('modal');if(modal?.open&&!modal.querySelector('[data-language-toggle]')){const button=document.createElement('button');button.type='button';button.className='dialog-language no-print';button.dataset.languageToggle='';button.onclick=()=>window.ZYI18n.toggle();modal.prepend(button)}
+
    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;
    while(node=walker.nextNode()){
     if(protectedNode(node)||!node.nodeValue.trim())continue;

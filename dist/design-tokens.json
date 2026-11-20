@@ -1,0 +1,143 @@
+{
+  "source": "https://claude.ai/artifact/AuxH9EZ6sDTMMwkgLCmE49",
+  "referenceCommit": "57c5884",
+  "version": 1,
+  "colors": {
+    "bg": "#eef3f8",
+    "surface": "#ffffff",
+    "row-alt": "#f8fafc",
+    "table-head": "#f5f8fb",
+    "group-head": "#e8eff7",
+    "row-selected": "#e6effa",
+    "company-bg": "#f7fafc",
+    "source-bg": "#fbfaf6",
+    "border": "#d3dde8",
+    "divider": "#e6ecf2",
+    "control-border": "#7f8fa2",
+    "text": "#1b2a3a",
+    "text-strong": "#15263a",
+    "text-secondary": "#4a5a6b",
+    "text-muted": "#5b6b7c",
+    "brand": "#2f65a0",
+    "brand-hover": "#214d78",
+    "brand-tint": "#e6effa",
+    "sidebar": "#172b46",
+    "sidebar-active": "#2a405d",
+    "sidebar-text": "#c9d4e2",
+    "nav-count": "#f4c76b",
+    "ready-bg": "#e1f2e7",
+    "ready-text": "#1f6b40",
+    "ready-dot": "#2f9e5f",
+    "review-bg": "#fbeccb",
+    "review-text": "#6a4505",
+    "review-dot": "#d99a1e",
+    "review-primary": "#f6c454",
+    "review-primary-text": "#3d2a00",
+    "draft-bg": "#e8edf3",
+    "draft-text": "#3d4e61",
+    "draft-dot": "#8a99aa",
+    "alert-bg": "#fdf3dc",
+    "alert-border": "#f0d99c",
+    "danger": "#ac4343",
+    "error-bg": "#fbeaea",
+    "error-border": "#e9c2c2",
+    "error-text": "#9b3434",
+    "match-high": "#1f5a8f",
+    "match-high-bg": "#e6effa",
+    "match-mid": "#2f65a0",
+    "match-mid-bg": "#eef3f8",
+    "match-low": "#5b6b7c",
+    "match-low-bg": "#f3f5f8",
+    "overlay": "#14233380"
+  },
+  "fontFamily": "\"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans SC\", system-ui, sans-serif",
+  "typography": {
+    "page-title": [
+      22,
+      30,
+      600
+    ],
+    "detail-title": [
+      20,
+      30,
+      600
+    ],
+    "section-title": [
+      15,
+      22,
+      600
+    ],
+    "job": [
+      14,
+      22,
+      600
+    ],
+    "body": [
+      13,
+      20,
+      400
+    ],
+    "body-long": [
+      13,
+      24,
+      400
+    ],
+    "label": [
+      12,
+      18,
+      400
+    ],
+    "numeric": [
+      13,
+      20,
+      500
+    ]
+  },
+  "spacing": {
+    "space-1": 4,
+    "space-2": 8,
+    "space-3": 12,
+    "space-4": 16,
+    "space-5": 20,
+    "space-6": 24,
+    "row-height": 52,
+    "control-height": 44,
+    "sidebar-width": 208,
+    "detail-width": 392
+  },
+  "radius": {
+    "radius-control": 8,
+    "radius-panel": 12,
+    "radius-pill": 999
+  },
+  "shadow": {
+    "shadow-panel": "0 3px 12px #172b460d",
+    "shadow-menu": "0 8px 25px #172b4626"
+  },
+  "breakpoints": {
+    "bp-mobile": 639,
+    "bp-tablet": 1099
+  },
+  "aliases": {
+    "review-action": "var(--alert-bg)",
+    "review-border": "var(--alert-border)",
+    "draft-border": "var(--border)",
+    "mobile-border": "var(--border)",
+    "shadow": "var(--shadow-panel)",
+    "layout-padding": "var(--space-5)",
+    "layout-gap": "var(--space-4)",
+    "font-title": "var(--font-page-title)",
+    "font-detail": "var(--font-detail-title)",
+    "order-columns": "104px minmax(200px,1fr) 92px 36px 64px 76px 96px",
+    "match-ok-bg": "var(--ready-bg)",
+    "match-ok": "var(--ready-text)",
+    "match-partial-bg": "var(--brand-tint)",
+    "match-partial": "var(--brand)",
+    "match-unknown-bg": "var(--draft-bg)",
+    "match-unknown": "var(--text-secondary)",
+    "match-bad-bg": "var(--error-bg)",
+    "match-bad": "var(--error-text)",
+    "match-bar-low": "var(--review-dot)",
+    "match-columns": "72px minmax(180px,1fr) 92px 220px 40px 64px"
+  }
+}
