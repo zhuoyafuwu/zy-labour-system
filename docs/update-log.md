@@ -338,6 +338,8 @@ Release preflight: verified current production aggregate baseline and Edge versi
 
 Released application commit `3612988`; applied `20261120002522_human_order_versions`; deployed ai-matching v3 and classification-worker v4, leaving recognize-order v13. Private final backup and isolated restore passed. All 385 copied order JSON values, 13 workers and 3 manual classifications were preserved. Pages and regression workflows succeeded. Maintenance is off and the original scheduler is active. Production checks were read-only; no real-record edits or production AI test calls were made. See `docs/human-save-deployment-20261120.md`.
 
-## Pending — work-history scope of duties
+## 2026-11-20 — work-history scope of duties
 
 Renamed the existing work-history duties control to “职责范围” and made it a multiline field. Preserved `workHistory[].duties`, existing values, matching and export placement; updated the long-text appendix label and UI translation. No database change or existing worker rewrite. Syntax checks passed. In-app browser verification against an isolated synthetic SQLite database confirmed multiline input, save/reopen with exact values and registration preview. This change does not repair PDF column extraction or rewrite previously misaligned records.
+
+Published worker duties UI at `8f767f7`. Pages deployment and recognition regressions passed; production HTML and updated JS assets matched the release commit exactly. No production worker record or database schema was changed.
