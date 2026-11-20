@@ -28,4 +28,4 @@ Use the existing in-app browser with synthetic data at 1280px, 690px and 375px. 
 
 Run `node scripts/design-tokens.mjs` after editing tokens, then `npm run check` and `npm run test:ui`. Both website workflows run the shared-interface regression. The self-hosted server explicitly serves every new shared asset; its test checks exact bytes and MIME types.
 
-This release contains frontend assets plus the self-hosted static allowlist. It needs no Supabase migration, Edge deployment, task restart, quota change or AI invocation. Publish the reviewed commit through the existing Pages workflow only after user confirmation. The complete change is based on main@57c5884 and preserves the earlier unpublished work branch.
+This release contains frontend assets plus the self-hosted static allowlist. It needs no Supabase migration, Edge deployment, task restart, quota change or AI invocation. The user confirmed publication; commit 3c36575 was published through the existing Pages workflow (run 44833444034). The complete change is based on main@57c5884 and preserves the earlier unpublished work branch.

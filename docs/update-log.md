@@ -1,4 +1,4 @@
-## 2026-11-20 — Shared interface system (pending publication approval)
+## 2026-11-20 — Shared interface system (published)
 
 Applied the supplied design system across the existing application: shared color/type/spacing/radius tokens, accessible controls and persistent notices, compact order/match rows, 208px desktop navigation, 64px medium rail, and the existing phone navigation. Company details, editor preview and copy preview share CompanySlip; the actual publication function and manual fee text remain authoritative.
 
@@ -6,7 +6,7 @@ Moved classification to administrator Settings, alongside account/team/backups. 
 
 Validation: syntax/manifest/generated-token checks; parser and human-save regressions; durable-task tests; shared-interface regressions covering exact clipboard arguments, immutable records, matching presentation, cache reopening and AI state metadata; Python server tests. In-app browser synthetic checks at 1280, 690 and 375px verified visible salary/copy/title cells, no document overflow, phone first result, admin/member settings, retained settings/editor inputs, duties textarea, language switch, picker arrows/Escape/count and yellow AI fallback.
 
-No production database, function, scheduler, AI or business-record changes. The standalone smoke runner cannot launch its Linux Chromium path on this Mac; related settings assertions were updated, and browser acceptance was performed in the requested in-app browser. Browser clipboard readback returned empty despite the success toast, so exact clipboard output is verified by the actual writer regression, not claimed as native clipboard acceptance. Mocked AI states are layout checks, not production model latency or quality acceptance. Publication awaits the user's previously requested confirmation.
+No production database, function, scheduler, AI or business-record changes. The standalone smoke runner cannot launch its Linux Chromium path on this Mac; related settings assertions were updated, and browser acceptance was performed in the requested in-app browser. Browser clipboard readback returned empty despite the success toast, so exact clipboard output is verified by the actual writer regression, not claimed as native clipboard acceptance. Mocked AI states are layout checks, not production model latency or quality acceptance. Published after the user's confirmation: application commit 3c36575; Pages run 44833444034 and recognition run 44833443988 both succeeded. The public index, shared token/theme/component scripts, matching view and settings script matched the release bytes exactly. The in-app browser loaded the production sign-in page with the expected system font and 12px panel token and no console errors. No production sign-in, AI invocation or business write was performed.
 
 ## 2026-11-17 — Coordinated release deployment verification
 
