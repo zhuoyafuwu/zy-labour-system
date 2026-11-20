@@ -38,3 +38,7 @@ Allowed CSP additions are scoped to the component CDN, trained-language-data hos
 - the actual coordinate/merge adapter using a deterministic PDF.js boundary, preservation before save, original-PDF preview, and dirty-state template switching.
 
 The adapter test does not establish real CDN availability or OCR accuracy for production scans. No real filled worker PDF was supplied in this export. Actual source PDFs still require staff acceptance checks.
+
+## Work-history duties field
+
+The existing `workHistory[].duties` value is labelled “职责范围” and uses a full-width multiline editor. Existing values, matching inputs, persistence keys and export placement are unchanged. Long-text appendix headings use the same label. This is a presentation change, with no migration or automatic record rewrite. The legacy PDF template/header remains supported; identifying a different source template requires separate extraction verification.
