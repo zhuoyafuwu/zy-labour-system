@@ -333,3 +333,7 @@ Separated human saves from recognition normalization and blockers; removed login
 Focused browser verification now succeeds through the existing in-app browser using an isolated localhost SQLite database. Fixed serving of the three human-save scripts and added real HTTP asset checks. Verified exact text after reopening and same-record two-tab conflict/Keep Mine. Standalone full smoke and production/new-table history UI acceptance remain pending.
 
 Release preflight: verified current production aggregate baseline and Edge versions through the reconnected Supabase tool. Published the isolated branch using GitHub Desktop after actual connector 403. Created an encrypted private application backup and verified exact offline restore plus the pending migration. Replaced native history-restore confirmation with an explicit page confirmation. Production database and main remain unchanged at this checkpoint.
+
+## 2026-11-20 — human-save release completed
+
+Released application commit `3612988`; applied `20261120002522_human_order_versions`; deployed ai-matching v3 and classification-worker v4, leaving recognize-order v13. Private final backup and isolated restore passed. All 385 copied order JSON values, 13 workers and 3 manual classifications were preserved. Pages and regression workflows succeeded. Maintenance is off and the original scheduler is active. Production checks were read-only; no real-record edits or production AI test calls were made. See `docs/human-save-deployment-20261120.md`.
