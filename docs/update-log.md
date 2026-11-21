@@ -1,3 +1,7 @@
+## Hide recognition evidence from order screens
+
+Removed recognition evidence and excerpts from the order disclosure, single and batch editors, and manual review dialog. The order disclosure shows a short conclusion when recognition needs attention. Stored evidence, publication status rules, and manual save behavior are unchanged.
+
 ## 2026-11-21 — Inline order disclosures and date strip (published)
 
 Replaced the order side panel and mobile drawer with one native-button disclosure beneath the selected row. Desktop uses the full-width six-column table and equal source/company columns; medium widths stack source/company while retaining a compact table, and phones use two-line cards. Raw is displayed verbatim, company preformatted body/fee text concatenates to publish() exactly, and manual fee notes remain authoritative. The existing delete confirmation includes code/title; edit/fee actions and persistence are unchanged. Copy now updates both visible buttons to a green Copied state. Review/draft notices remain yellow, with explicit review/fee actions.

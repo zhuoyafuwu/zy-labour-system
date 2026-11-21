@@ -32,7 +32,7 @@ This release contains frontend assets plus the self-hosted static allowlist. It 
 
 ## Inline order details and horizontal dates (November 21 revision)
 
-Order details always expand below their row: original source on the left, company publication on the right. Only one order is expanded. Filtering/deletion closes an invisible selection; synchronization and editor return preserve a visible selection and reveal its row. The native row button exposes aria-expanded; the sibling copy button never toggles disclosure. Sources are read-only and field provenance is an optional disclosure within that column. CompanySlip is shared by the expanded right column and the pre-save editor preview. The default two-line fee note and user-edited fee text remain unchanged.
+Order details always expand below their row: original source on the left, company publication on the right. Only one order is expanded. Filtering/deletion closes an invisible selection; synchronization and editor return preserve a visible selection and reveal its row. The native row button exposes aria-expanded; the sibling copy button never toggles disclosure. The source column displays the stored original text as read-only. Recognition evidence stays internal, with a short warning above the columns when review is needed. CompanySlip is shared by the expanded right column and the pre-save editor preview. The default two-line fee note and user-edited fee text remain unchanged.
 
 ```text
 Full-width order list

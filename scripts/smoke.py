@@ -130,9 +130,8 @@ with tempfile.TemporaryDirectory() as tmp:
             assert 'HKD500' in admin.locator('#o-salary').input_value()
             assert '底15500+1618津贴' in admin.locator('#o-salary').input_value();assert '2500' in notes
             assert admin.locator('#o-code').input_value().endswith(' XR')
-            assert admin.locator('.recognition-review').count()==1
-            admin.locator('.recognition-review > summary').click()
-            assert 'HKD17118' in admin.locator('.source-table').first.inner_text()
+            assert admin.locator('.recognition-review, .source-table').count()==0
+            assert admin.evaluate("Object.values(ZYOrderParser.reviewOrder(singleRecognitionMeta.raw,singleRecognitionMeta).sources).flat().some(text=>text.includes('HKD17118'))")
             set_amount(admin,'#o-price','3.7w')
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             company=admin.evaluate('publish(orders[0])')
@@ -271,9 +270,8 @@ with tempfile.TemporaryDirectory() as tmp:
             assert admin.locator('#o-salary').input_value()=='HKD17770+'
             assert admin.locator('#o-gender').input_value()=='男女不限'
             assert '出报价单' in admin.locator('#o-workContent').input_value()
-            admin.locator('.recognition-review > summary').click()
-            assert '住扣封顶20%' in admin.locator('.source-table').first.inner_text()
-            assert admin.locator('.recognition-review details').count()==1
+            assert admin.locator('.recognition-review, .source-table').count()==0
+            assert admin.evaluate("Object.values(ZYOrderParser.reviewOrder(singleRecognitionMeta.raw,singleRecognitionMeta).sources).flat().some(text=>text.includes('住扣封顶20%'))")
             set_amount(admin,'#o-price','4.2w');admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             released=admin.evaluate("publish(orders[0])")
             assert 'HKD17770+' in released and '出报价单' in released
@@ -286,7 +284,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert admin.evaluate("ZYOrderParser.validateCompany(orders[0],true).includes('请先核对未分类或冲突内容并确认')")
             admin.evaluate('editOrder(orders[0].id)')
             admin.locator('#o-notes').fill('附加条件已核实')
-            admin.locator('.recognition-review > summary').click()
+            assert admin.locator('.recognition-review, .source-table').count()==0
             admin.evaluate('saveOrder()');admin.wait_for_selector('.order-row',state='attached')
             reviewed=admin.evaluate("id=>api('/api/orders').then(result=>result.orders.find(o=>o.id===id))",pending)
             assert reviewed['raw']==unknown and reviewed['parserVersion']=='17'
@@ -314,7 +312,8 @@ with tempfile.TemporaryDirectory() as tmp:
             # Batch uses the same classifier, and raw changes invalidate a prior confirmation.
             admin.evaluate("editing=null;mode='batch';batch=[];go('new')")
             admin.locator('#batchraw').fill(unknown);admin.evaluate('previewBatch()')
-            admin.locator('.recognition-review > summary').click();admin.locator('.review-confirm input').check()
+            assert admin.locator('.recognition-review, .source-table').count()==0
+            admin.evaluate('batch[0].reviewConfirmation=ZYOrderParser.reviewSignature(batch[0].raw)')
             assert admin.evaluate('!!batch[0].reviewConfirmation')
             admin.locator('#batch-item-raw').fill('新增未知条件\n'+unknown)
             assert admin.evaluate("batch[0].reviewConfirmation==='' ")

@@ -8,7 +8,7 @@ const ready={id:'synthetic-one',code:'SYN-001',title:'合成仓库理货员',emp
 const rows=[ready,{...ready,id:'synthetic-two',code:'SYN-002',title:'合成清洁员',createdAt:'2026-11-20T16:30:00Z'},{...ready,id:'synthetic-draft',code:'SYN-003',price:'',createdAt:'2026-11-18T01:00:00Z'},{...ready,id:'synthetic-review',code:'SYN-004',gender:''}];const before=JSON.stringify(rows);
 const nodes=new Map();for(const key of ['#order-workspace','#order-search','#content','#results','#state-chips','#list-count','[data-range="date"]'])nodes.set(key,{innerHTML:'',textContent:'',setAttribute(){},toggleAttribute(){},classList:{add(){}}});
 const strip={scrollLeft:0,querySelector:()=>null};nodes.set('#order-calendar',{innerHTML:'',querySelector:()=>strip,contains:()=>false});
-const context=vm.createContext({esc,orders:rows,filters:{orders:{q:'',s:'',range:'today',date:''}},view:'orders',ZYHumanSave:H,ZYTime:{...T,todayKey:()=> '2026-11-21'},ZYOrderParser:{isHumanReviewed:o=>!!o.humanReviewedAt},document:{body:{dataset:{}},readyState:'loading',addEventListener(){},activeElement:null,getElementById:()=>null,querySelectorAll:()=>[],querySelector:s=>s==='.date-segments'?{classList:{add(){}}}:null},$:s=>nodes.get(s),window:{},addEventListener(){},requestAnimationFrame:cb=>cb(),setTimeout,clearTimeout,scrollY:0,innerHeight:900,today:()=> '2026-11-21',day:v=>T.dateKey(v),orderStateLabels:{ready:'可发布',draft:'待确认金额',review:'需核对'},recognitionReviewMarkup:()=>'<p>synthetic sources</p>',persistHumanList(){}});
+const context=vm.createContext({esc,orders:rows,filters:{orders:{q:'',s:'',range:'today',date:''}},view:'orders',ZYHumanSave:H,ZYTime:{...T,todayKey:()=> '2026-11-21'},ZYOrderParser:{isHumanReviewed:o=>!!o.humanReviewedAt,reviewOrder:()=>({warnings:[]})},document:{body:{dataset:{}},readyState:'loading',addEventListener(){},activeElement:null,getElementById:()=>null,querySelectorAll:()=>[],querySelector:s=>s==='.date-segments'?{classList:{add(){}}}:null},$:s=>nodes.get(s),window:{},addEventListener(){},requestAnimationFrame:cb=>cb(),setTimeout,clearTimeout,scrollY:0,innerHeight:900,today:()=> '2026-11-21',day:v=>T.dateKey(v),orderStateLabels:{ready:'可发布',draft:'待确认金额',review:'需核对'},persistHumanList(){}});
 context.orderPublication=o=>({order:o,problems:H.issues(o,[]).map(x=>x.message)});context.orderState=o=>!o.price?'draft':H.issues(o,[]).length?'review':'ready';
 for(const prefix of ['function priceN(','function feeNote(','function publishedFeeNote(','function publish('])vm.runInContext(html.split('\n').find(line=>line.startsWith(prefix)),context);
 vm.runInContext(read('dist/ui-system.js'),context);vm.runInContext(read('dist/order-list.js'),context);
@@ -30,3 +30,10 @@ context.markOrderCopied(ready.id,context.publish(ready));assert.equal(context.or
 context.moveOrderCalendar(1);calendar=nodes.get('#order-calendar').innerHTML;assert.equal((calendar.match(/class="date-count numeric" data-user-content><\/span>/g)||[]).length,31);
 assert.equal(JSON.stringify(rows),before);assert(!html.includes('id="detail-overlay"'));assert(!read('dist/ui-components.css').includes('.zy-slip::before'));
 console.log('PASS: inline disclosure, single selection, sync/filter/editor restoration, deletion/filter collapse, exact publication/raw, warnings, Beijing dates, counts, keyboard and immutable records');
+
+assert(!context.orderExpandedMarkup(ready).includes('zy-notice--warning'));
+context.ZYOrderParser.reviewOrder=()=>({warnings:['synthetic private recognition evidence']});
+const flagged=context.orderExpandedMarkup(ready);
+assert(flagged.includes('识别结果可能不完整，请核对'));
+assert(!flagged.includes('synthetic private recognition evidence'));
+assert(!flagged.includes('order-field-sources'));

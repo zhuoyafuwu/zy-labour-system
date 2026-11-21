@@ -22,7 +22,7 @@ async function enterWorkspace(data){
   ZYOrderStore.note(result);orders=result.orders;revision=result.revision;
   $('#login')?.remove();$('aside').hidden=false;$('main').hidden=false;
   $('aside footer').innerHTML=`<span><span data-user-content>${esc(sessionUser.username)}</span> · ${sessionUser.role==='admin'?'管理员':'员工'}</span><div class="actions"><button onclick="accountDialog()">设置</button><button onclick="logout()">退出</button></div><div id="syncStatus" style="margin-top:10px">团队资料已连接</div><button type="button" class="sidebar-language" data-language-pair data-language-toggle onclick="ZYI18n.toggle()">中文 / English</button>`;
-  worker={};editing=null;selectedOrderId=null;detailTab='company';go('dashboard');lastSync=Date.now();
+  worker={};editing=null;selectedOrderId=null;go('dashboard');lastSync=Date.now();
 }
 async function logout(){window.ZYAIMatching?.reset();if(!ZYDrafts.confirmAll())return;try{await api('/api/logout',{method:'POST',body:{}});loginScreen('已退出登录')}catch(e){toast(e.message)}}
 async function accountDialog(tab='account'){

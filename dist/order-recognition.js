@@ -8,39 +8,14 @@ window.newView=function(){
  singleRecognitionMeta=editing?{...(orders.find(o=>o.id===editing)||{})}:null;
  const raw=$('#raw');if(!raw)return;
  const feedback=document.createElement('div');feedback.id='recognition-feedback';feedback.setAttribute('role','status');raw.parentElement.insertBefore(feedback,raw);
- const refresh=()=>{if(!$('#raw'))return;const meta=singleRecognitionMeta||{};if(!ZYOrderParser.isHumanReviewed(meta))meta.reviewConfirmation='';singleRecognitionMeta=meta;const current={...meta,...read(orderFields),raw:$('#raw').value};recognitionFeedback(ZYOrderParser.reviewOrder(current.raw,current).warnings,false,current)};
+ const refresh=()=>{if(!$('#raw'))return;const meta=singleRecognitionMeta||{};if(!ZYOrderParser.isHumanReviewed(meta))meta.reviewConfirmation='';singleRecognitionMeta=meta;recognitionFeedback([])};
  for(const control of $('#content').querySelectorAll('[id^="o-"]'))control.addEventListener(control.tagName==='SELECT'?'change':'input',refresh);
- if(editing){feedback.innerHTML=recognitionReviewMarkup(singleRecognitionMeta);const button=document.createElement('button');button.type='button';button.textContent='按原单重新识别（预览）';button.onclick=reparseExistingOrder;raw.parentElement.querySelector('.note').before(button)}
+ if(editing){const button=document.createElement('button');button.type='button';button.textContent='按原单重新识别（预览）';button.onclick=reparseExistingOrder;raw.parentElement.querySelector('.note').before(button)}
 };
-const recognitionExclusionReasons={supplier_package_quote:'上家全包报价',upstream_fee:'上家收费信息',supplier_footer:'上家尾部报价',unlabelled_amount:'无标签金额或算式',promotional_heading:'宣传提示'};
-function recognitionReviewMarkup(order,batchIndex=-1,embedded=false){
- if(!order)return '';
- const report=ZYOrderParser.reviewOrder(order.raw||'',order);
- const reasons=recognitionExclusionReasons;
- const excluded=report.excluded.map(entry=>`<tr><td data-user-content>${esc(entry.text)}</td><td>${reasons[entry.reason]||'已排除'}</td></tr>`).join('');
- const conflicts=report.conflicts.map(entry=>`<p data-user-content>${esc(entry.text)}</p>`).join('');
- const confirmed=ZYOrderParser.isHumanReviewed(order)||ZYOrderParser.hasReviewConfirmation(order);
- const rows=Object.entries(report.sources).filter(([key])=>Object.hasOwn(orderFields,key)).map(([key,lines])=>`<tr><th>${esc(orderFields[key].replace('*',''))}</th><td data-user-content>${lines.map(line=>esc(line)).join('<br>')}</td></tr>`).join('');
- return `${embedded?'<section class="recognition-review embedded-review">':'<details class="recognition-review"><summary>字段来源与待核对清单</summary>'}<div class="recognition-body">${report.reviewed?'<p class="note">公司单已人工核对</p>':''}<p>来源为识别时的原文片段；手动修改后请重新核对。</p>${report.warnings.length?`<ul>${report.warnings.map(text=>`<li>${esc(text)}</li>`).join('')}</ul>`:'<p>未发现额外核对项目，仍请确认识别结果。</p>'}${rows?`<table class="source-table"><tbody>${rows}</tbody></table>`:''}${excluded?`<details><summary>已排除内容与原因</summary><table class="source-table"><tbody>${excluded}</tbody></table></details>`:''}${conflicts?`<h3>冲突内容</h3>${conflicts}`:''}${report.needsAcknowledgement&&!embedded?`<label class="review-confirm"><input type="checkbox" ${confirmed?'checked':''} onchange="confirmRecognitionReview(this.checked,${batchIndex})"><span>已核对未分类和冲突内容，必要信息已补入公司单</span></label>`:''}${report.unclassified.length?`<h3>未分类内容</h3><p data-user-content>${report.unclassified.map(line=>esc(line)).join('<br>')}</p>`:''}</div>${embedded?'</section>':'</details>'}`;
-}
-function updateRecognitionReview(container,order,index=-1){
- const existing=container.querySelector('.recognition-review');
- if(!order){existing?.remove();return;}
- const holder=document.createElement('div');holder.innerHTML=recognitionReviewMarkup(order,index);
- const next=holder.firstElementChild;
- if(existing)existing.querySelector('.recognition-body').replaceChildren(...next.querySelector('.recognition-body').childNodes);
- else container.append(next);
-}
-function confirmRecognitionReview(checked,index=-1){
- const target=index>=0?batch[index]:(singleRecognitionMeta??={});
- const raw=index>=0?target.raw:$('#raw').value;
- target.reviewConfirmation=checked?ZYOrderParser.reviewSignature(raw):'';
-}
-function recognitionFeedback(messages,multi=false,order=null){
+function recognitionFeedback(messages,multi=false){
  const container=$('#recognition-feedback');if(!container)return;
  let notices=container.querySelector('.recognition-messages');if(!notices){notices=document.createElement('div');notices.className='recognition-messages';container.prepend(notices)}
  notices.innerHTML=messages.length?`<div class="note">${messages.map(message=>`<p>${esc(message)}</p>`).join('')}${multi?'<button type="button" onclick="moveSourceToBatch()">转到批量处理</button>':''}</div>`:'';
- updateRecognitionReview(container,order);
 
 }
 function fillRecognisedFields(order){for(const key of Object.keys(orderFields))$('#o-'+key).value=(key==='salary'?ZYOrderParser.formatCompanySalary(order[key]):order[key])||'';refreshFeeNote();globalThis.ZYUI?.editorPreview()}
@@ -71,7 +46,7 @@ window.autoParse=async function(){
   if(JSON.stringify(read(orderFields))!==formBefore||element.value!==original){outcome='表单已修改，未覆盖人工内容';return toast(outcome)}
   if(!result.order){recognitionFeedback(result.warnings,true);outcome=result.warnings[0];return toast(outcome)}
   const order=ZYCompanyText.draft(result.order);if(!order.sourcePrefix&&singleRecognitionMeta?.raw===order.raw){order.sourcePrefix=singleRecognitionMeta.sourcePrefix||'';order.code=ZYOrderParser.companyCode(order.code,order.sourcePrefix)}order.price=suggestion(order.salary);singleRecognitionMeta=order;$('#raw').value=order.raw;fillRecognisedFields(order);priceManual=false;
-  recognitionFeedback(result.warnings,false,order);outcome='整理完成，请核对各项信息';complete=true;toast(outcome);
+  recognitionFeedback([]);outcome='整理完成，请核对各项信息';complete=true;toast(outcome);
  }catch{outcome='整理未完成，请重试';toast(outcome)}
  finally{progress.finish(outcome,complete)}
 };
@@ -107,10 +82,9 @@ let pendingOrderReview=null;
 function reviewList(title,items,userContent=false){return items.length?`<section class="review-dialog-section"><h3>${title}</h3><ul>${items.map(text=>`<li ${userContent?'data-user-content':''}>${esc(text)}</li>`).join('')}</ul></section>`:''}
 window.markOrderReviewed=function(id){
  const record=orders.find(order=>order.id===id);if(!record||!sessionUser)return;
- const report=ZYOrderParser.reviewOrder(record.raw||'',record),metadata=ZYOrderParser.humanReviewMetadata(record,sessionUser.username);
  const blockers=ZYHumanSave.issues(record,orders).map(x=>x.message);
  pendingOrderReview={id,record:JSON.stringify(record),owner:sessionUser.id};
- $('#modal').innerHTML=`<h2>确认人工核对</h2><p data-user-content>${esc(record.code)} · ${esc(record.title)}</p>${reviewList('待核对提示',report.warnings)}${!report.warnings.length&&!report.unclassified.length&&!report.conflicts.length?'<p>未发现额外核对项目，仍请确认识别结果。</p>':''}${reviewList('未分类内容',report.unclassified,true)}${reviewList('冲突内容',report.conflicts.map(item=>item.text),true)}${report.excluded.length?`<section class="review-dialog-section"><h3>已排除内容与原因</h3><table class="source-table"><tbody>${report.excluded.map(item=>`<tr><td data-user-content>${esc(item.text)}</td><td>${recognitionExclusionReasons[item.reason]||'已排除'}</td></tr>`).join('')}</tbody></table></section>`:''}${reviewList('请先修改以下问题',blockers)}<div class="actions"><button onclick="$('#modal').close()">取消</button>${blockers.length?'<button class="primary" onclick="editPendingReview()">编辑公司单</button>':'<button class="primary" id="confirm-order-review" onclick="confirmOrderReview()">确认已人工核对</button>'}</div>`;
+ $('#modal').innerHTML=`<h2>确认人工核对</h2><p data-user-content>${esc(record.code)} · ${esc(record.title)}</p><p>请确认已核对公司单信息。</p>${reviewList('请先修改以下问题',blockers)}<div class="actions"><button onclick="$('#modal').close()">取消</button>${blockers.length?'<button class="primary" onclick="editPendingReview()">编辑公司单</button>':'<button class="primary" id="confirm-order-review" onclick="confirmOrderReview()">确认已人工核对</button>'}</div>`;
  $('#modal').showModal();
 };
 function editPendingReview(){const id=pendingOrderReview?.id;$('#modal').close();if(id)editOrder(id)}

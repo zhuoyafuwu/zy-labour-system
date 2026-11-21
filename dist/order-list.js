@@ -1,6 +1,6 @@
 /* View-only unified order workspace. Business validation and writes stay in their existing modules. */
-let selectedOrderId=null,detailTab='company',orderListReturn=null,searchTimer=null;
-let calendarExpanded=false,orderSourceOpen=false;
+let selectedOrderId=null,orderListReturn=null,searchTimer=null;
+let calendarExpanded=false;
 const copiedOrderIds=new Map();
 const expandedOrderDates=new Set();
 const jsValue=value=>esc(JSON.stringify(value));
@@ -47,16 +47,18 @@ function card(record){
 }
 function orderExpandedMarkup(record){
  const {order:o,problems}=orderPublication(record),state=orderState(record),id=jsValue(o.id),reviewed=ZYOrderParser.isHumanReviewed(o);
- const warning=state!=='ready'?`<div class="publication-problems zy-notice zy-notice--warning" role="status"><strong>${state==='draft'?'请先确认全包价':'请核对公司单信息'}</strong>${problems.length?`<ul>${problems.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`:''}</div>`:'';
+ const needsRecognitionReview=!reviewed && o.raw && ZYOrderParser.reviewOrder(o.raw,o).warnings.length>0;
+ const conclusions=[...(state==='draft'?['请先确认全包价']:[]),...problems,...(needsRecognitionReview?['识别结果可能不完整，请核对']:[])];
+ const warning=conclusions.length?`<div class="publication-problems zy-notice zy-notice--warning" role="status">${conclusions.map(text=>`<span>${esc(text)}</span>`).join('；')}</div>`:'';
  const meta=[reviewed?'<span>已人工核对</span>':'',`<time data-user-content>${esc(day(o.humanReviewedAt||o.createdAt))}</time>`,`<span>全包价</span> ${priceN(o.price)>0?`<b data-user-content>${esc(priceFmt(o.price))}</b>`:'<span>待确认</span>'}`].filter(Boolean).join(' · ');
- return `<section class="order-expanded" id="${orderRowKey(o.id)}-details" aria-labelledby="${orderRowKey(o.id)}">${warning}<div class="order-expanded-columns"><section class="order-source"><div class="order-source-heading"><h3>原单</h3><span>上家原文 · 只读</span></div><pre class="source-copy" data-user-content>${esc(record.raw||'')}</pre><details class="order-field-sources" ${orderSourceOpen?'open':''} ontoggle="if(this.isConnected)orderSourceOpen=this.open"><summary>字段来源</summary>${recognitionReviewMarkup(record,-1,true)}</details></section><section class="order-company">${ZYUI.companySlip(record)}<div class="order-expanded-actions"><p class="order-expanded-meta">${meta}</p><div class="order-action-buttons"><button class="danger" data-order-action="delete" onclick="deleteOrder(${id})">删除</button><button data-order-action="edit" onclick="editOrder(${id})">编辑</button><button class="primary ${copiedOrderIds.has(o.id)?'is-copied':''}" data-order-action="primary" ${state==='ready'?`data-copy-order="${esc(o.id)}" data-copy-full="true"`:''} onclick="${state==='ready'?`copyOrder(${id})`:state==='review'?`editOrder(${id})`:`fillPrice(${id})`}">${state==='ready'?orderCopyLabel(o.id,true):state==='review'?'去核对':'确认金额'}</button></div></div></section></div></section>`;
+ return `<section class="order-expanded" id="${orderRowKey(o.id)}-details" aria-labelledby="${orderRowKey(o.id)}">${warning}<div class="order-expanded-columns"><section class="order-source"><div class="order-source-heading"><h3>原单</h3><span>上家原文 · 只读</span></div><pre class="source-copy" data-user-content>${esc(record.raw||'')}</pre></section><section class="order-company">${ZYUI.companySlip(record)}<div class="order-expanded-actions"><p class="order-expanded-meta">${meta}</p><div class="order-action-buttons"><button class="danger" data-order-action="delete" onclick="deleteOrder(${id})">删除</button><button data-order-action="edit" onclick="editOrder(${id})">编辑</button><button class="primary ${copiedOrderIds.has(o.id)?'is-copied':''}" data-order-action="primary" ${state==='ready'?`data-copy-order="${esc(o.id)}" data-copy-full="true"`:''} onclick="${state==='ready'?`copyOrder(${id})`:state==='review'?`editOrder(${id})`:`fillPrice(${id})`}">${state==='ready'?orderCopyLabel(o.id,true):state==='review'?'去核对':'确认金额'}</button></div></div></section></div></section>`;
 }
 function listRender(){
  if(view!=='orders'||!$('#results'))return;
  for(const [id,text] of copiedOrderIds){const record=orders.find(o=>o.id===id);if(!record||publish(record)!==text)copiedOrderIds.delete(id)}
  const active=document.activeElement,activeEntry=active?.closest('.order-entry'),focusAction=active?.dataset?.orderAction,focusRow=active?.classList.contains('order-open'),focusCopy=active?.classList.contains('row-action');
  const f=filters.orders,range=rangeOrders().filter(orderMatchesQuery),matches=range.filter(o=>!f.s||orderState(o)===f.s);
- if(selectedOrderId&&!matches.some(o=>o.id===selectedOrderId)){selectedOrderId=null;orderSourceOpen=false}
+ if(selectedOrderId&&!matches.some(o=>o.id===selectedOrderId)){selectedOrderId=null}
  const selected=matches.find(o=>o.id===selectedOrderId);if(selected)expandedOrderDates.add(day(selected.createdAt));
  $('#state-chips').innerHTML=[['','全部'],['review','需核对'],['draft','待确认金额'],['ready','可发布']].map(([state,label])=>`<button class="state-chip" data-filter-state="${state}" aria-pressed="${f.s===state}" onclick="setOrderState('${state}')"><i class="state-dot dot-${state||'all'}" aria-hidden="true"></i><span>${label}</span> <b data-user-content>${state?range.filter(o=>orderState(o)===state).length:range.length}</b></button>`).join('');
  document.querySelectorAll('[data-range]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.range===f.range)));
@@ -89,13 +91,13 @@ function renderOrderCalendar(){
 }
 function scrollOrderDateIntoView(){requestAnimationFrame(()=>{const strip=$('.order-date-strip');if(!strip)return;const target=strip.querySelector('[aria-pressed="true"]')||strip.querySelector('[aria-current="date"]');if(!target)return;const box=target.getBoundingClientRect(),viewport=strip.getBoundingClientRect();if(box.left<viewport.left||box.right>viewport.right)strip.scrollLeft+=box.left-viewport.left-(viewport.width-box.width)/2})}
 function orderDateKeys(event){if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const buttons=[...event.currentTarget.parentElement.querySelectorAll('button')],at=buttons.indexOf(event.currentTarget),next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(at+(event.key==='ArrowRight'?1:buttons.length-1))%buttons.length;buttons[next]?.focus()}
-function rememberOrderList(id){selectedOrderId=id;orderListReturn={filters:{...filters.orders},id,sourceOpen:orderSourceOpen,pageY:scrollY}}
-function restoreOrderList(){if(!orderListReturn)return;filters.orders={...orderListReturn.filters};selectedOrderId=orderListReturn.id;orderSourceOpen=orderListReturn.sourceOpen;render();ensureExpandedOrderVisible()}
-function showSavedOrder(id){filters.orders={q:'',s:'',range:'today',date:''};selectedOrderId=id;orderSourceOpen=false;const record=orders.find(o=>o.id===id);if(record)expandedOrderDates.add(day(record.createdAt));render();ensureExpandedOrderVisible()}
+function rememberOrderList(id){selectedOrderId=id;orderListReturn={filters:{...filters.orders},id,pageY:scrollY}}
+function restoreOrderList(){if(!orderListReturn)return;filters.orders={...orderListReturn.filters};selectedOrderId=orderListReturn.id;render();ensureExpandedOrderVisible()}
+function showSavedOrder(id){filters.orders={q:'',s:'',range:'today',date:''};selectedOrderId=id;const record=orders.find(o=>o.id===id);if(record)expandedOrderDates.add(day(record.createdAt));render();ensureExpandedOrderVisible()}
 function ensureExpandedOrderVisible(){if(!selectedOrderId)return;const button=document.getElementById(orderRowKey(selectedOrderId));if(!button)return;const box=button.getBoundingClientRect();if(box.top<0||box.bottom>innerHeight)button.scrollIntoView({block:'nearest',behavior:'instant'})}
-function toggleOrderDetails(id){if(selectedOrderId===id){selectedOrderId=null;orderSourceOpen=false;listRender()}else openOrderDetail(id)}
-function openOrderDetail(id,tab){if(!orders.some(o=>o.id===id))return;if(selectedOrderId!==id)orderSourceOpen=tab==='sources';selectedOrderId=id;closeOrderMenu();listRender()}
-function closeOrderDetail(){selectedOrderId=null;orderSourceOpen=false;listRender()}
+function toggleOrderDetails(id){if(selectedOrderId===id){selectedOrderId=null;listRender()}else openOrderDetail(id)}
+function openOrderDetail(id){if(!orders.some(o=>o.id===id))return;selectedOrderId=id;closeOrderMenu();listRender()}
+function closeOrderDetail(){selectedOrderId=null;listRender()}
 // Compatibility for authentication/editor callers; order details no longer use any dialog.
 function hideDetailOverlay(){}
 function refreshOrderDetail(){listRender()}
