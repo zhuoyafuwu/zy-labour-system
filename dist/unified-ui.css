@@ -68,3 +68,35 @@ aside:not(.match-profile){background:var(--sidebar);color:var(--sidebar-text)}as
   display: flex; justify-content: flex-end;
  }
 }
+
+body[data-view=new] #content > .steps,
+body[data-view=new] #content > .tabs { margin-block: var(--space-2) var(--space-3); }
+.order-entry-heading { margin-bottom: var(--space-3); }
+#content #raw, #content #batchraw, #content #batch-item-raw {
+ min-height: 144px;
+}
+#raw + .actions, #batchraw + .actions { margin-top: var(--space-2); }
+.worker-record-actions, .worker-records-heading > .actions {
+ display: flex;
+ align-items: center;
+ flex-wrap: wrap;
+ gap: var(--space-2);
+}
+.worker-utilities[open] .worker-menu-panel {
+ position: absolute;
+ z-index: 7;
+ inset-inline-end: 0;
+ min-width: max-content;
+ display: grid;
+ gap: var(--space-1);
+ padding: var(--space-2);
+ border: 1px solid var(--border);
+ border-radius: var(--radius-control);
+ background: var(--surface);
+ box-shadow: var(--shadow-menu);
+}
+.worker-utilities[open] .worker-menu-panel button { position: static; box-shadow: none; }
+@media (max-width: 639px) {
+ .workerrow > .worker-record-actions { grid-column: 1 / -1; }
+ .worker-records-heading > .actions > .primary { flex-basis: 100%; }
+}

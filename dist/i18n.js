@@ -1,6 +1,7 @@
 /* UI-only localisation. Never rerenders a form or translates business data. */
 (function(){
  const pairs=[
+ ["收起详情","Collapse details"],["档案更多操作","More record actions"],
  ["跳到区块","Jump to section"],["选择区块","Choose a section"],["新建登记","New registration"],
  ["识别结果可能不完整，请核对","Recognition may be incomplete. Please review."],["请确认已核对公司单信息。","Confirm that you reviewed the company order."],
  ["删除公司单","Delete Company Order"],

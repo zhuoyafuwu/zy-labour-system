@@ -369,3 +369,7 @@ Published worker duties UI at `8f767f7`. Pages deployment and recognition regres
 ## Responsive workspace polish
 
 Kept the full-width order list and inline details, made matching columns shrink around the essentials, and moved full salary text into expanded details. Added a registration section picker, grouped backup under More Actions, and kept preview and save within reach above the mobile navigation.
+
+## Mobile workflow refinements
+
+Raised the source editor height and tightened its controls. Highlighted the worker directory matching entry, grouped secondary actions under More Actions, and added a bottom collapse control that restores focus to the originating order row.

@@ -51,7 +51,7 @@ function orderExpandedMarkup(record){
  const conclusions=[...(state==='draft'?['请先确认全包价']:[]),...problems,...(needsRecognitionReview?['识别结果可能不完整，请核对']:[])];
  const warning=conclusions.length?`<div class="publication-problems zy-notice zy-notice--warning" role="status">${conclusions.map(text=>`<span>${esc(text)}</span>`).join('；')}</div>`:'';
  const meta=[reviewed?'<span>已人工核对</span>':'',`<time data-user-content>${esc(day(o.humanReviewedAt||o.createdAt))}</time>`,`<span>全包价</span> ${priceN(o.price)>0?`<b data-user-content>${esc(priceFmt(o.price))}</b>`:'<span>待确认</span>'}`].filter(Boolean).join(' · ');
- return `<section class="order-expanded" id="${orderRowKey(o.id)}-details" aria-labelledby="${orderRowKey(o.id)}">${warning}<div class="order-expanded-columns"><section class="order-source"><div class="order-source-heading"><h3>原单</h3><span>上家原文 · 只读</span></div><pre class="source-copy" data-user-content>${esc(record.raw||'')}</pre></section><section class="order-company">${ZYUI.companySlip(record)}<div class="order-expanded-actions"><p class="order-expanded-meta">${meta}</p><div class="order-action-buttons"><button class="danger" data-order-action="delete" onclick="deleteOrder(${id})">删除</button><button data-order-action="edit" onclick="editOrder(${id})">编辑</button><button class="primary ${copiedOrderIds.has(o.id)?'is-copied':''}" data-order-action="primary" ${state==='ready'?`data-copy-order="${esc(o.id)}" data-copy-full="true"`:''} onclick="${state==='ready'?`copyOrder(${id})`:state==='review'?`editOrder(${id})`:`fillPrice(${id})`}">${state==='ready'?orderCopyLabel(o.id,true):state==='review'?'去核对':'确认金额'}</button></div></div></section></div></section>`;
+ return `<section class="order-expanded" id="${orderRowKey(o.id)}-details" aria-labelledby="${orderRowKey(o.id)}">${warning}<div class="order-expanded-columns"><section class="order-source"><div class="order-source-heading"><h3>原单</h3><span>上家原文 · 只读</span></div><pre class="source-copy" data-user-content>${esc(record.raw||'')}</pre></section><section class="order-company">${ZYUI.companySlip(record)}<div class="order-expanded-actions"><p class="order-expanded-meta">${meta}</p><div class="order-action-buttons"><button data-order-action="collapse" onclick="closeOrderDetail()">收起详情</button><button class="danger" data-order-action="delete" onclick="deleteOrder(${id})">删除</button><button data-order-action="edit" onclick="editOrder(${id})">编辑</button><button class="primary ${copiedOrderIds.has(o.id)?'is-copied':''}" data-order-action="primary" ${state==='ready'?`data-copy-order="${esc(o.id)}" data-copy-full="true"`:''} onclick="${state==='ready'?`copyOrder(${id})`:state==='review'?`editOrder(${id})`:`fillPrice(${id})`}">${state==='ready'?orderCopyLabel(o.id,true):state==='review'?'去核对':'确认金额'}</button></div></div></section></div></section>`;
 }
 function listRender(){
  if(view!=='orders'||!$('#results'))return;
@@ -97,7 +97,15 @@ function showSavedOrder(id){filters.orders={q:'',s:'',range:'today',date:''};sel
 function ensureExpandedOrderVisible(){if(!selectedOrderId)return;const button=document.getElementById(orderRowKey(selectedOrderId));if(!button)return;const box=button.getBoundingClientRect();if(box.top<0||box.bottom>innerHeight)button.scrollIntoView({block:'nearest',behavior:'instant'})}
 function toggleOrderDetails(id){if(selectedOrderId===id){selectedOrderId=null;listRender()}else openOrderDetail(id)}
 function openOrderDetail(id){if(!orders.some(o=>o.id===id))return;selectedOrderId=id;closeOrderMenu();listRender()}
-function closeOrderDetail(){selectedOrderId=null;listRender()}
+function closeOrderDetail(){
+ const id=selectedOrderId;
+ selectedOrderId=null;
+ listRender();
+ if(!id)return;
+ const trigger=document.getElementById(orderRowKey(id));
+ trigger?.focus({preventScroll:true});
+ trigger?.scrollIntoView({block:'nearest'});
+}
 // Compatibility for authentication/editor callers; order details no longer use any dialog.
 function hideDetailOverlay(){}
 function refreshOrderDetail(){listRender()}
