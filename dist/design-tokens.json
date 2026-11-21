@@ -103,7 +103,21 @@
     "row-height": 52,
     "control-height": 44,
     "sidebar-width": 208,
-    "detail-width": 392
+    "detail-width": 392,
+    "order-code-width": 120,
+    "order-salary-width": 150,
+    "order-state-width": 112,
+    "order-copy-width": 92,
+    "order-arrow-width": 44,
+    "order-mobile-row-height": 80,
+    "date-cell-width": 40,
+    "date-cell-min-width": 28,
+    "date-cell-height": 68,
+    "date-header-height": 32,
+    "order-code-compact-width": 80,
+    "order-salary-compact-width": 100,
+    "order-state-compact-width": 90,
+    "order-copy-compact-width": 64
   },
   "radius": {
     "radius-control": 8,
@@ -116,7 +130,9 @@
   },
   "breakpoints": {
     "bp-mobile": 639,
-    "bp-tablet": 1099
+    "bp-tablet": 1099,
+    "bp-order-cards": 640,
+    "bp-order-stacked": 860
   },
   "aliases": {
     "review-action": "var(--alert-bg)",

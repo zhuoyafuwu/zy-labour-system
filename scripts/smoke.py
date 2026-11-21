@@ -52,7 +52,8 @@ with tempfile.TemporaryDirectory() as tmp:
             assert staff.evaluate('orders.length')==0
             staff.locator('#o-gender').select_option('男女不限');staff.evaluate('saveOrder()');staff.wait_for_selector('.order-row',state='attached')
             assert staff.evaluate('filters.orders.range')=='today' and staff.evaluate('selectedOrderId===orders[0].id')
-            assert staff.locator('#order-detail.has-order').count()==1
+            assert staff.locator('.order-expanded').count()==1
+            assert staff.locator('.order-open[aria-expanded=true]').count()==1
             admin.evaluate('syncShared()');admin.wait_for_selector('.order-row',state='attached');assert '共享厨师' in admin.locator('.order-row').inner_text()
             # Two editors started from the same revision: second save must not overwrite.
             for page in [admin,staff]:page.evaluate('editOrder(orders[0].id)')
@@ -186,7 +187,8 @@ with tempfile.TemporaryDirectory() as tmp:
             admin.locator('aside footer [data-language-toggle]').click()
             admin.evaluate('saveBatch()');admin.wait_for_selector('.order-row',state='attached')
             assert admin.evaluate('filters.orders.range')=='today' and admin.evaluate('selectedOrderId===orders[0].id')
-            assert admin.locator('#order-detail.has-order').count()==1
+            assert admin.locator('.order-expanded').count()==1
+            assert admin.locator('.order-open[aria-expanded=true]').count()==1
             assert admin.evaluate("orders.slice(0,2).map(o=>o.gender)")==['女','男']
             assert admin.evaluate('orders.slice(0,2).map(o=>o.status)')==['draft','ready']
             assert admin.evaluate('orders[0].requirements')=='批量备注：工作要求'
@@ -408,20 +410,20 @@ with tempfile.TemporaryDirectory() as tmp:
             admin.evaluate("filters.orders.q='';filters.orders.q='';go('orders')")
             # Calendar starts collapsed on entry, highlights today, and stays open during date selection.
             admin.evaluate("filters.orders.date='';orderCalendarMonth=(({year,month})=>({year,month}))(ZYTime.parts(new Date()));go('orders')")
-            assert not admin.locator('.calendar-panel').evaluate('(el)=>el.open')
+            assert admin.locator('.order-date-panel').count()==0
             admin.locator('[data-range="date"]').click()
             assert admin.locator('.calendar-day.calendar-today').count()==1
             assert admin.locator('.calendar-day.calendar-today').get_attribute('aria-current')=='date'
             colours=admin.evaluate("()=>[getComputedStyle(document.querySelector('.calendar-today')).backgroundColor,getComputedStyle(document.querySelector('.calendar-day:not(.calendar-today)')).backgroundColor]")
             assert colours[0]!=colours[1]
             admin.locator('.calendar-day:not(.calendar-today)').first.click()
-            assert admin.locator('.calendar-panel').evaluate('(el)=>el.open')
-            assert admin.locator('.calendar-day.primary:not(.calendar-today)').count()==1
+            assert admin.locator('.order-date-panel').count()==1
+            assert admin.locator('.calendar-day.is-selected:not(.calendar-today)').count()==1
             assert admin.locator('.calendar-day.calendar-today').count()==1
             admin.evaluate("moveOrderCalendar(1);moveOrderCalendar(-1)")
-            assert admin.locator('.calendar-panel').evaluate('(el)=>el.open')
+            assert admin.locator('.order-date-panel').count()==1
             admin.evaluate("go('dashboard');go('orders')")
-            assert not admin.locator('.calendar-panel').evaluate('(el)=>el.open')
+            assert admin.locator('.order-date-panel').count()==0
             admin.evaluate("selectOrderDate('')")
             # Database date groups start collapsed, toggle independently, and retain open state on rerender.
             admin.evaluate("expandedOrderDates.clear();go('orders')")

@@ -13,7 +13,7 @@
     "test:tasks": "node --experimental-strip-types tests/classification-tasks.ts && node --experimental-strip-types tests/classification-worker-auth.ts && node tests/classification-task-ui.mjs",
     "test:ai-matching": "node --experimental-strip-types tests/ai-matching.ts",
     "test:human-save": "node tests/human-save.mjs && node tests/human-save-db.mjs",
-    "test:ui": "node tests/unified-ui.mjs"
+    "test:ui": "node tests/unified-ui.mjs && node tests/order-inline.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14"

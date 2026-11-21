@@ -1,6 +1,8 @@
 /* UI-only localisation. Never rerenders a form or translates business data. */
 (function(){
  const pairs=[
+ ["删除公司单","Delete Company Order"],
+ ["上家原文 · 只读","Original Supplier Text · Read-only"],["字段来源","Field Sources"],["请先确认全包价","Confirm the Total Fee First"],["请核对公司单信息","Review the Company Order"],["去核对","Review"],["确认金额","Confirm Fee"],["已复制","Copied"],["本月共","This month:"],["份，点日期查看当天的单","orders; select a date to view its orders"],["已选","Selected"],["清除日期","Clear Date"],
  ["规则高匹配","High Rule Matches"],
  ["设置", "Settings"],
  ["账号", "Account"],
@@ -137,6 +139,9 @@
    else if((match=trimmed.match(/^AI 分析中，已分析 (\d+) \/ 共 (\d+) 张$/)))translated=`AI analysis: ${match[1]} / ${match[2]} orders`;
    else if((match=trimmed.match(/^AI 分析于 (\d{2}:\d{2})$/)))translated=`AI analysed at ${match[1]}`;
    else if((match=trimmed.match(/^共 (\d+) 人$/)))translated=`${match[1]} workers`;
+   else if((match=trimmed.match(/^(\d{4})年(\d{1,2})月$/)))translated=`${match[1]}-${match[2].padStart(2,'0')}`;
+   else if((match=trimmed.match(/^(\d{1,2})月(\d{1,2})日，(\d+) 份$/)))translated=`${match[1]}/${match[2]}, ${match[3]} orders`;
+   else if((match=trimmed.match(/^(\d{1,2})月(\d{1,2})日$/)))translated=`${match[1]}/${match[2]}`;
    else if(trimmed==='份')translated='orders';
    else if((match=trimmed.match(/^(录入|更新于)\s+(.+)$/)))translated=`${dictionary.get(match[1])} ${match[2]}`;
    else if(trimmed.includes('·')){const parts=trimmed.split('·');if(parts.some(p=>dictionary.has(p.trim())))translated=parts.map(p=>dictionary.get(p.trim())||p.trim()).join(' · ')}
