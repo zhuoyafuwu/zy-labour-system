@@ -1,6 +1,7 @@
 /* UI-only localisation. Never rerenders a form or translates business data. */
 (function(){
  const pairs=[
+ ["跳到区块","Jump to section"],["选择区块","Choose a section"],["新建登记","New registration"],
  ["识别结果可能不完整，请核对","Recognition may be incomplete. Please review."],["请确认已核对公司单信息。","Confirm that you reviewed the company order."],
  ["删除公司单","Delete Company Order"],
  ["上家原文 · 只读","Original Supplier Text · Read-only"],["请先确认全包价","Confirm the Total Fee First"],["请核对公司单信息","Review the Company Order"],["去核对","Review"],["确认金额","Confirm Fee"],["已复制","Copied"],["本月共","This month:"],["份，点日期查看当天的单","orders; select a date to view its orders"],["已选","Selected"],["清除日期","Clear Date"],

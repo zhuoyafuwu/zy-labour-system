@@ -21,3 +21,50 @@ aside:not(.match-profile){background:var(--sidebar);color:var(--sidebar-text)}as
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
 .two{gap:var(--space-4)}.steps{padding:var(--space-4);border-radius:var(--radius-control)}.upload{border-radius:var(--radius-control);padding:var(--space-6)}.match-excluded>summary{display:block}.match-excluded>summary>span{display:inline!important}.match-excluded-group{margin-top:var(--space-2)}
+
+/* Keep essential matching actions in view. Expanded details carry full salary and evidence. */
+#match-workspace .match-grid {
+ grid-template-columns: 56px minmax(0, 3fr) minmax(80px, 1.5fr) minmax(0, 2fr) 56px;
+}
+#match-workspace .match-order-open,
+#match-workspace .match-order-open strong { min-width: 0; }
+#match-workspace .match-salary { font-variant-numeric: tabular-nums; }
+.match-full-salary { overflow-wrap: anywhere; color: var(--text-strong); }
+.worker-entry-header .worker-heading { margin-bottom: var(--space-3); }
+.worker-heading > .actions { display: flex; gap: var(--space-2); align-items: center; }
+.worker-utilities { position: relative; border: 0; padding: 0; }
+.worker-utilities summary {
+ display: flex; align-items: center; min-height: var(--control-height);
+ padding-inline: var(--space-2); cursor: pointer; color: var(--text-secondary);
+}
+.worker-utilities[open] button {
+ position: absolute; z-index: 6; inset-inline-end: 0; white-space: nowrap;
+ box-shadow: var(--shadow-menu);
+}
+.worker-section-picker {
+ display: flex; flex-direction: row; align-items: center; gap: var(--space-2);
+ margin-bottom: var(--space-4);
+}
+.worker-section-picker select { max-width: 200px; }
+.worker-form-section h2 { scroll-margin-top: var(--space-4); }
+.worker-form-section h2:focus-visible { outline: 2px solid var(--brand); }
+@media (min-width: 640px) and (max-width: 1099px) {
+ #match-workspace .match-row { grid-template-columns: 44px minmax(0, 1fr) minmax(92px, 1fr) 56px; }
+}
+@media (max-width: 639px) {
+ #match-workspace .match-toolbar,
+ #match-workspace .match-mobile-tabs { margin-block-end: var(--space-2); }
+ #match-workspace .match-filter { gap: var(--space-2); }
+ #match-workspace .match-chips { flex: 1 1 180px; min-width: 0; }
+ #match-workspace .match-range-mobile { width: 108px; }
+ #match-workspace .ai-match-status { white-space: normal; padding: var(--space-2); }
+ #match-workspace .match-grid.match-row { grid-template-columns: 36px minmax(0, 1fr) 52px; }
+ .worker-heading > .actions { margin-top: var(--space-2); }
+ body[data-view=workers] #content { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
+ #worker-registration-form .worker-save-bar {
+  position: fixed; z-index: 4; inset-inline: 0; bottom: 68px;
+  margin: 0; padding: var(--space-2) var(--space-3);
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end;
+ }
+}

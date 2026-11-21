@@ -365,3 +365,7 @@ Released application commit `3612988`; applied `20261120002522_human_order_versi
 Renamed the existing work-history duties control to “职责范围” and made it a multiline field. Preserved `workHistory[].duties`, existing values, matching and export placement; updated the long-text appendix label and UI translation. No database change or existing worker rewrite. Syntax checks passed. In-app browser verification against an isolated synthetic SQLite database confirmed multiline input, save/reopen with exact values and registration preview. This change does not repair PDF column extraction or rewrite previously misaligned records.
 
 Published worker duties UI at `8f767f7`. Pages deployment and recognition regressions passed; production HTML and updated JS assets matched the release commit exactly. No production worker record or database schema was changed.
+
+## Responsive workspace polish
+
+Kept the full-width order list and inline details, made matching columns shrink around the essentials, and moved full salary text into expanded details. Added a registration section picker, grouped backup under More Actions, and kept preview and save within reach above the mobile navigation.
